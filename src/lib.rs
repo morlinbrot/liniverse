@@ -3,11 +3,17 @@ use std::rc::Rc;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 
+pub mod point;
+use point::Point;
+
 pub mod planet;
 use planet::Planet;
 
 mod universe;
 use universe::Universe;
+
+const NO_OF_PLANETS: usize = 20;
+const NO_OF_ITERATIONS: usize = 100;
 
 fn window() -> web_sys::Window {
     web_sys::window().expect("Can't instantiate window object")
@@ -63,23 +69,23 @@ pub fn run() -> Result<(), JsValue> {
     body.append_child(&status_div)?;
 
     let mut universe = Universe::new(dimensions.0, dimensions.1);
-    universe.init_random(100);
+    universe.init_random(NO_OF_PLANETS);
 
-    let mut i = 0.0;
+    let mut i = 0;
     *g.borrow_mut() = Some(Closure::wrap(Box::new(move || {
-        context.clear_rect(0.0, 0.0, dimensions.0, dimensions.1);
-        status_div.set_inner_html(&format!("Frame: {}", i));
-
-        if i > 100.0 {
+        if i >= NO_OF_ITERATIONS {
             let _ = f.borrow_mut().take();
             return;
         }
+
+        context.clear_rect(0.0, 0.0, dimensions.0, dimensions.1);
+        status_div.set_inner_html(&format!("Frame: {}", i));
 
         universe.draw(&context);
 
         universe.tick();
 
-        i += 1.0;
+        i += 1;
         request_animation_frame(f.borrow().as_ref().unwrap());
     }) as Box<FnMut()>));
 
