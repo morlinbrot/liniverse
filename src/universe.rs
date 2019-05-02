@@ -1,10 +1,10 @@
 extern crate math;
 extern crate rand;
 
-use math::round;
+//use math::round;
 use rand::Rng;
 use std::f64::consts::PI;
-use wasm_bindgen::prelude::*;
+//use wasm_bindgen::prelude::*;
 
 use super::{Planet, Point};
 
@@ -60,50 +60,30 @@ impl Universe {
             ctx.arc(p_pos.x, p_pos.y, p.radius * scale, 0.0, PI * 2.0)
                 .unwrap();
 
-            for j in 0..i {
-                let other_p = &self.planets[j];
-                let other_pos = other_p.get_pos();
+            for (j, other_p) in (&self.planets).iter().enumerate() {
+                if j != i {
+                    let other_pos = other_p.get_pos();
 
-                let dist = other_pos - p_pos;
+                    let dist = other_pos - p_pos;
 
-                let F = G * (p.m * other_p.m / dist.mag().powf(2.0));
+                    let F = G * (p.m * other_p.m / dist.mag().powf(2.0));
 
-                if F > min_force {
-                    let target_x = p_pos.x + dist.norm().x * (F * scale_f);
-                    let target_y = p_pos.y + dist.norm().y * (F * scale_f);
+                    if F > min_force {
+                        let target_x = p_pos.x + dist.norm().x * (F * scale_f);
+                        let target_y = p_pos.y + dist.norm().y * (F * scale_f);
 
-                    ctx.move_to(p_pos.x, p_pos.y);
-                    ctx.line_to(target_x, target_y);
+                        ctx.move_to(p_pos.x, p_pos.y);
+                        ctx.line_to(target_x, target_y);
 
-                    ctx.set_font(&"16px Mono");
-                    //let text = format!("F: {}", F);
-                    //ctx.fill_text(&text, p_pos.x, p_pos.y).unwrap();
-                    //let val: JsValue = dist.mag().into();
-                    //web_sys::console::log_1(&val);
+                        ctx.set_font(&"16px Mono");
+                        //let text = format!("F: {}", F);
+                        //ctx.fill_text(&text, p_pos.x, p_pos.y).unwrap();
+                        //let val: JsValue = dist.mag().into();
+                        //web_sys::console::log_1(&val);
+                    }
+
                 }
-            }
 
-            for k in i + 1..self.planets.len() {
-                let other_p = &self.planets[k];
-                let other_pos = other_p.get_pos();
-
-                let dist = other_pos - p_pos;
-
-                let F = G * (p.m * other_p.m / dist.mag().powf(2.0));
-
-                if F > min_force {
-                    let target_x = p_pos.x + dist.norm().x * scale_f;
-                    let target_y = p_pos.y + dist.norm().y * scale_f;
-
-                    ctx.move_to(p_pos.x, p_pos.y);
-                    ctx.line_to(target_x, target_y);
-
-                    ctx.set_font(&"16px Mono");
-                    //let text = format!("F: {}", F);
-                    //ctx.fill_text(&text, p_pos.x, p_pos.y).unwrap();
-                    //let val: JsValue = dist.mag().into();
-                    //web_sys::console::log_1(&val);
-                }
             }
 
             ctx.stroke();

@@ -1,9 +1,9 @@
 extern crate rand;
 
 use rand::Rng;
+use std::f64::consts::PI;
 
 use super::Point;
-use super::Universe;
 
 type Canvas = web_sys::CanvasRenderingContext2d;
 
@@ -13,23 +13,52 @@ pub(crate) struct Planet {
     dir: Point,
     // Mass in kg
     pub(crate) m: f64,
+    // Radius in km
     pub(crate) radius: f64,
+    // Volume
+    V: f64,
     // Velocity
     v: f64,
+    // Density in kg/m³
+    p: f64,
 }
 
 impl Planet {
     pub(crate) fn new(x: f64, y: f64) -> Self {
         let mut rng = rand::thread_rng();
+        // Earth
+        let radius = 6_371.0;
+        let density = 5513.0;
+        //let mass = 5.9722 * 10_f64.powf(24);
+
+        // Sun
+        //let radius = 695_510.0;
+        //let density = 1409.0;
+        //let mass = 7.9897 * 10_f64.powf(30);
+
+        //// Moon
+        //let radius = 1737.0;
+        //let density = 3344.0;
+        //let mass = 7.348 * 10_f64.powf(22);
+
+        //// Mars
+        //let radius = 3389.5;
+        //let density = 3934;
+        //let mass = 6.419 * 10_f64.powf(23);
+
+        let volume = 4.0 / 3.0 * PI * (radius * 1_000 as f64).powf(3.0);
+        let mass = density * volume;
 
         Planet {
+            radius,
             pos: Point { x, y },
             dir: Point {
                 x: rng.gen_range(-5.0, 5.0),
                 y: rng.gen_range(-5.0, 5.0),
             },
-            m: 5.927 * 10_f64.powf(24.0),
-            radius: 6_371.0,
+            V: volume,
+            p: density,
+            m: mass,
             v: 1.0,
         }
     }
@@ -44,10 +73,14 @@ impl Planet {
 
         if x > max_x {
             x = x - max_x;
+        } else if x < 0.0 {
+            x = x + max_x;
         }
 
         if y > max_y {
             y = y - max_y;
+        } else if y < 0.0 {
+            y = y + max_y;
         }
 
         self.pos = Point { x, y };

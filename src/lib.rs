@@ -12,8 +12,8 @@ use planet::Planet;
 mod universe;
 use universe::Universe;
 
-const NO_OF_PLANETS: usize = 20;
-const NO_OF_ITERATIONS: usize = 100;
+const NO_OF_PLANETS: usize = 4;
+const NO_OF_ITERATIONS: usize = 1000;
 
 fn window() -> web_sys::Window {
     web_sys::window().expect("Can't instantiate window object")
@@ -79,7 +79,7 @@ pub fn run() -> Result<(), JsValue> {
         }
 
         context.clear_rect(0.0, 0.0, dimensions.0, dimensions.1);
-        status_div.set_inner_html(&format!("Frame: {}", i));
+        status_div.set_inner_html(&format!("Tick: {}", i));
 
         universe.draw(&context);
 
