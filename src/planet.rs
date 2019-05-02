@@ -95,8 +95,8 @@ impl Planet {
     }
 
     pub(crate) fn accelerate(&self, acc: Point) {
-        self.velocity.set(self.velocity.get() + acc.norm());
-        self.speed.set(self.speed.get() + acc.mag() / self.mass());
+        self.velocity.set(self.velocity.get() + acc);
+        //self.speed.set(self.speed.get() + acc.mag() / self.mass());
     }
 
     pub(crate) fn pos(&self) -> Point {

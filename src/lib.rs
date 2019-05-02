@@ -12,8 +12,8 @@ use planet::Planet;
 mod universe;
 use universe::Universe;
 
-const NO_OF_PLANETS: usize = 20;
-const NO_OF_ITERATIONS: usize = 100;
+const NO_OF_PLANETS: usize = 10;
+const NO_OF_ITERATIONS: usize = 1000;
 
 fn window() -> web_sys::Window {
     web_sys::window().expect("Can't instantiate window object")

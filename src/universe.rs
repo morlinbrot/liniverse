@@ -43,7 +43,7 @@ impl Universe {
         let G = 6.67 * 10_f64.powf(-11.0);
         //let scale = 10_f64.powf(-1.0);
         let scale = 3.0 * 10_f64.powf(-6.0);
-        let scale_f = 10_f64.powf(-34.0);
+        let scale_f = 2.0 * 10_f64.powf(-48.0);
 
         let min_force = 10_f64.powf(-20.0);
 
@@ -59,9 +59,10 @@ impl Universe {
 
             for (j, other_p) in (&self.planets).iter().enumerate() {
                 if j != i {
-                    let acc = other_p.pos() - p.pos();
-                    let mut F = G * (p.mass() * other_p.mass() / acc.mag().powf(2.0));
+                    let direction = other_p.pos() - p.pos();
+                    let mut F = (p.mass() * other_p.mass() / direction.mag().powf(2.0));
                     F = F * scale_f;
+                    let acc = direction.norm() * F;
 
                     if F > min_force {
                         p.accelerate(acc);
