@@ -12,8 +12,8 @@ use planet::Planet;
 mod universe;
 use universe::Universe;
 
-const NO_OF_PLANETS: usize = 4;
-const NO_OF_ITERATIONS: usize = 1000;
+const NO_OF_PLANETS: usize = 20;
+const NO_OF_ITERATIONS: usize = 100;
 
 fn window() -> web_sys::Window {
     web_sys::window().expect("Can't instantiate window object")
@@ -69,7 +69,7 @@ pub fn run() -> Result<(), JsValue> {
     body.append_child(&status_div)?;
 
     let mut universe = Universe::new(dimensions.0, dimensions.1);
-    universe.init_random(NO_OF_PLANETS);
+    universe.init_random();
 
     let mut i = 0;
     *g.borrow_mut() = Some(Closure::wrap(Box::new(move || {
