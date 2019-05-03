@@ -131,6 +131,7 @@ impl std::ops::Div<usize> for &Point {
     }
 }
 
+#[cfg(test)]
 mod test {
     use super::*;
 

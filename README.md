@@ -1,4 +1,4 @@
-## wasm-universe
+## liniverse
 
 `wasm-pack build`
 

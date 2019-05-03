@@ -6,8 +6,6 @@ use std::f64::consts::PI;
 
 use super::Point;
 
-type Canvas = web_sys::CanvasRenderingContext2d;
-
 // Earth
 //let density = 5513.0;
 //let radius = 6_371.0;
