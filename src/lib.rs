@@ -14,7 +14,7 @@ use universe::Universe;
 
 const DIMENSIONS: (f64, f64) = (1080.0, 700.0);
 const NO_OF_PLANETS: usize = 100;
-const NO_OF_ITERATIONS: usize = 1000;
+const NO_OF_ITERATIONS: usize = 10_000;
 
 fn window() -> web_sys::Window {
     web_sys::window().expect("Can't instantiate window object")

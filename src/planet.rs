@@ -26,32 +26,34 @@ use super::*;
 //let density = 3934;
 //let mass = 6.419 * 10_f64.powf(23);
 
+/// We're using `Cell` and the interior mutability pattern to be able to loop over immutable
+/// references of planets during `tick` and still be able to mutate the fields.
 #[allow(dead_code)]
 #[derive(Clone)]
 pub(crate) struct Planet {
     pos: Cell<Point>,
     // Density D in kg/m³
-    density: f64,
+    density: Cell<f64>,
     // Radius r in m
-    pub(crate) radius: f64,
-    pub(crate) velocity: Cell<Point>,
-    pub(crate) dead: Cell<bool>,
+    radius: Cell<f64>,
+    velocity: Cell<Point>,
+    dead: Cell<bool>,
 }
 
-#[allow(dead_code)]
+#[allow(dead_code, non_snake_case)]
 impl Planet {
-    pub(crate) fn new(x: f64, y: f64, density: f64, radius: f64) -> Self {
-        let velocity = Point { x: 1.0, y: 1.0 };
-
+    /// Create a planet with given parameters.
+    pub(crate) fn new(x: f64, y: f64, density: f64, radius: f64, velocity: Point) -> Self {
         Planet {
-            density,
-            radius,
+            density: Cell::new(density),
+            radius: Cell::new(radius),
             pos: Cell::new(Point { x, y }),
             velocity: Cell::new(velocity),
             dead: Cell::new(false),
         }
     }
 
+    /// Create a planet with randomly generated parameters.
     pub(crate) fn new_rng() -> Self {
         let mut rng = rand::thread_rng();
 
@@ -64,13 +66,13 @@ impl Planet {
         };
 
         let velocity = Point {
-            x: rng.gen_range(-3.0, 3.0),
-            y: rng.gen_range(-3.0, 3.0),
+            x: rng.gen_range(-0.2, 1.5),
+            y: rng.gen_range(-0.2, 1.5),
         };
 
         Planet {
-            density,
-            radius,
+            density: Cell::new(density),
+            radius: Cell::new(radius),
             pos: Cell::new(pos),
             velocity: Cell::new(velocity),
             dead: Cell::new(false),
@@ -81,28 +83,61 @@ impl Planet {
         self.pos.get()
     }
 
+    pub(crate) fn dead(&self) -> bool {
+        self.dead.get()
+    }
+
+    pub(crate) fn die(&self) {
+        self.dead.set(true)
+    }
+
+    pub(crate) fn radius(&self) -> f64 {
+        self.radius.get()
+    }
+
+    fn density(&self) -> f64 {
+        self.density.get()
+    }
+
+    fn velocity(&self) -> Point {
+        self.velocity.get()
+    }
+
+    fn volume(&self) -> f64 {
+        4.0 / 3.0 * PI * (self.radius() as f64).powf(3.0)
+    }
+
     pub(crate) fn mass(&self) -> f64 {
-        self.density * self.volume()
+        self.density() * self.volume()
     }
 
-    pub(crate) fn volume(&self) -> f64 {
-        4.0 / 3.0 * PI * (self.radius as f64).powf(3.0)
-    }
-
+    /// Add a given acceleration to the planet's velocity. The acceleration vector should
+    /// should represent the single net force to be applied each tick.
     pub(crate) fn accelerate(&self, acc: Point) {
         self.velocity.set(self.velocity.get() + acc);
     }
 
-    pub(crate) fn eat(&self, _other_p: &Planet) {
-        unimplemented!();
+    /// Add two masses together, calculate the new volume and derive a new radius.
+    /// V = m/D
+    /// V = 4 / 3 * π * radius³
+    /// r³ = V / (4 / 3 * π)
+    pub(crate) fn eat(&self, other_p: &Planet) {
+        let m = self.mass() + other_p.mass();
+        let D = (self.density() + other_p.density()) / 2.0;
+        let V = m / D;
+
+        let r = (V / (4.0 / 3.0 * PI)).cbrt();
+        self.radius.set(r);
     }
 
+    /// Update the planets position by adding its velocity to its current position.
+    /// If it moves out of the universe's dimensions, it's inserted on the other side.
     pub(crate) fn update(&self) {
         let max_x = DIMENSIONS.0;
         let max_y = DIMENSIONS.1;
 
-        let mut x = self.pos().x + self.velocity.get().x;
-        let mut y = self.pos().y + self.velocity.get().y;
+        let mut x = self.pos().x + self.velocity().x;
+        let mut y = self.pos().y + self.velocity().y;
 
         if x > max_x {
             x = x - max_x;
@@ -119,13 +154,6 @@ impl Planet {
         self.pos.set(Point { x, y });
     }
 }
-
-//use std::iter::FromIterator;
-//impl<'a> FromIterator<&'a Planet> for Planet {
-//    fn from_iter<I: IntoIterator<Item = &'a Planet>>(iter: I) -> Self {
-//        Planet::new_rng()
-//    }
-//}
 
 impl std::fmt::Debug for Planet {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
