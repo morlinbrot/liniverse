@@ -30,7 +30,7 @@ use super::Point;
 pub(crate) struct Planet {
     pos: Cell<Point>,
     // Density D in kg/m³
-    pub(crate) density: f64,
+    density: f64,
     // Radius r in m
     pub(crate) radius: f64,
     pub(crate) velocity: Cell<Point>,
@@ -53,7 +53,7 @@ impl Planet {
         let mut rng = rand::thread_rng();
 
         let density = 5513.0;
-        let radius = rng.gen_range(10.0, 20.0);
+        let radius = rng.gen_range(5.0, 10.0);
 
         let pos = Point {
             x: rng.gen_range(0.0, 800.0),
@@ -73,28 +73,23 @@ impl Planet {
         }
     }
 
-    // Mass m in kg/m³
-    pub(crate) fn mass(&self) -> f64 {
-        self.density * self.volume()
-    }
-
-    // Volume V in m³
-    pub(crate) fn volume(&self) -> f64 {
-        4.0 / 3.0 * PI * (self.radius as f64).powf(3.0)
-    }
-
     pub(crate) fn pos(&self) -> Point {
         self.pos.get()
     }
 
-    pub(crate) fn accelerate(&self, acc: Point) {
-        self.velocity.set(self.velocity.get() + acc);
-        //self.speed.set(self.speed.get() + acc.mag() / self.mass());
+    pub(crate) fn mass(&self) -> f64 {
+        self.density * self.volume()
     }
 
-    pub(crate) fn mv(&self, max_x: f64, max_y: f64) {
-        //let mut x = self.pos.x + self.dir.x * self.speed;
-        //let mut y = self.pos.y - self.dir.y * self.speed;
+    pub(crate) fn volume(&self) -> f64 {
+        4.0 / 3.0 * PI * (self.radius as f64).powf(3.0)
+    }
+
+    pub(crate) fn accelerate(&self, acc: Point) {
+        self.velocity.set(self.velocity.get() + acc);
+    }
+
+    pub(crate) fn update(&self, max_x: f64, max_y: f64) {
         let mut x = self.pos().x + self.velocity.get().x;
         let mut y = self.pos().y + self.velocity.get().y;
 

@@ -12,7 +12,7 @@ use planet::Planet;
 mod universe;
 use universe::Universe;
 
-const NO_OF_PLANETS: usize = 40;
+const NO_OF_PLANETS: usize = 100;
 const NO_OF_ITERATIONS: usize = 1000;
 
 fn window() -> web_sys::Window {

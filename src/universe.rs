@@ -66,12 +66,10 @@ impl Universe {
             }
 
             let mut net_force = Point { x: 0.0, y: 0.0 };
-            for f in forces.into_iter() {
-                net_force = net_force + f;
-            }
+            net_force = forces.into_iter().fold(net_force, |acc, curr| acc + curr);
 
             p.accelerate(net_force * scale_f);
-            p.mv(self.dimensions.0, self.dimensions.1);
+            p.update(self.dimensions.0, self.dimensions.1);
         }
     }
 
@@ -88,11 +86,10 @@ impl Universe {
             ctx.arc(p.pos().x, p.pos().y, p.radius, 0.0, PI * 2.0)
                 .unwrap();
 
-            let target_x = p.pos().x + p.velocity.get().x;
-            let target_y = p.pos().y + p.velocity.get().y;
-
-            ctx.move_to(p.pos().x, p.pos().y);
-            ctx.line_to(target_x, target_y);
+            //let target_x = p.pos().x + p.velocity.get().x;
+            //let target_y = p.pos().y + p.velocity.get().y;
+            //ctx.move_to(p.pos().x, p.pos().y);
+            //ctx.line_to(target_x, target_y);
 
             //let text = format!("acc: {}", acc.x);
             //ctx.fill_text(&text, p.pos().x, p.pos().y).unwrap();
