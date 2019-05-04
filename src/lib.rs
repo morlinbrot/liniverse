@@ -12,7 +12,7 @@ use planet::Planet;
 mod universe;
 use universe::Universe;
 
-const NO_OF_PLANETS: usize = 10;
+const NO_OF_PLANETS: usize = 40;
 const NO_OF_ITERATIONS: usize = 1000;
 
 fn window() -> web_sys::Window {
@@ -53,7 +53,7 @@ pub fn run() -> Result<(), JsValue> {
     let f = Rc::new(RefCell::new(None));
     let g = f.clone();
 
-    let dimensions = (800.0, 600.0);
+    let dimensions = (1080.0, 700.0);
 
     let body = body();
 
@@ -81,9 +81,8 @@ pub fn run() -> Result<(), JsValue> {
         context.clear_rect(0.0, 0.0, dimensions.0, dimensions.1);
         status_div.set_inner_html(&format!("Tick: {}", i));
 
-        universe.draw(&context);
-
         universe.tick();
+        universe.draw(&context);
 
         i += 1;
         request_animation_frame(f.borrow().as_ref().unwrap());

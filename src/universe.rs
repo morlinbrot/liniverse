@@ -5,9 +5,13 @@ extern crate rand;
 use std::f64::consts::PI;
 //use wasm_bindgen::prelude::*;
 
-use super::Planet;
+use super::{Planet, Point};
 
 type Canvas = web_sys::CanvasRenderingContext2d;
+
+/// F = m*a
+/// 1 Newton is the force F required to accelerate a mass of 1kg by 1m/s² in the
+/// direction of the force F:
 
 pub(crate) struct Universe {
     dimensions: (f64, f64),
@@ -23,6 +27,8 @@ impl Universe {
     }
 
     pub(crate) fn init_random(&mut self) {
+        self.planets.push(Planet::new(400.0, 300.0, 8000.0, 50.0));
+
         for _i in 0..super::NO_OF_PLANETS {
             self.planets.push(Planet::new_rng());
         }
@@ -33,58 +39,68 @@ impl Universe {
         //    .push(Planet::new(450.0, 350.0, 3_000.0, 1_000_000.0));
     }
 
-    pub(crate) fn tick(&mut self) {
-        for p in &mut self.planets {
+    #[allow(non_snake_case)]
+    pub(crate) fn tick<'a>(&self) {
+        let G = 6.67 * 10_f64.powf(-11.0);
+
+        let scale_f = 10_f64.powf(4.0);
+
+        for (i, p) in self.planets.iter().enumerate() {
+            let mut forces: Vec<Point> = vec![];
+
+            for (j, other_p) in self.planets.iter().enumerate() {
+                if i != j {
+                    let direction = other_p.pos() - p.pos();
+
+                    if direction.mag() <= p.radius {
+                        continue;
+                    } else {
+                        let d = direction.mag();
+                        let F = (G * p.mass() * other_p.mass()) / (d * d);
+
+                        let acc = direction.norm() * (F / p.mass());
+
+                        forces.push(acc);
+                    }
+                }
+            }
+
+            let mut net_force = Point { x: 0.0, y: 0.0 };
+            for f in forces.into_iter() {
+                net_force = net_force + f;
+            }
+
+            p.accelerate(net_force * scale_f);
             p.mv(self.dimensions.0, self.dimensions.1);
         }
     }
 
     #[allow(non_snake_case)]
     pub(crate) fn draw<'a>(&self, ctx: &'a Canvas) -> &'a Canvas {
-        let G = 6.67 * 10_f64.powf(-11.0);
-        //let scale = 10_f64.powf(-1.0);
-        let scale = 3.0 * 10_f64.powf(-6.0);
-        let scale_f = 2.0 * 10_f64.powf(-48.0);
-
-        let min_force = 10_f64.powf(-20.0);
-
         ctx.set_stroke_style(&"hotpink".into());
+        ctx.set_line_width(2.0);
 
-        for (i, p) in (&self.planets).iter().enumerate() {
+        for p in (&self.planets).iter() {
             ctx.begin_path();
             ctx.set_font(&"16px Mono");
 
             // Draw the planet itself.
-            ctx.arc(p.pos().x, p.pos().y, p.radius * scale, 0.0, PI * 2.0)
+            ctx.arc(p.pos().x, p.pos().y, p.radius, 0.0, PI * 2.0)
                 .unwrap();
 
-            for (j, other_p) in (&self.planets).iter().enumerate() {
-                if j != i {
-                    let direction = other_p.pos() - p.pos();
-                    let mut F = G * p.mass() * other_p.mass() / direction.mag().powf(2.0);
-                    F = F * scale_f;
-                    let acc = direction.norm() * F;
+            let target_x = p.pos().x + p.velocity.get().x;
+            let target_y = p.pos().y + p.velocity.get().y;
 
-                    if F > min_force {
-                        p.accelerate(acc);
-                        //let target_x = p.pos().x + acc.norm().x * F;
-                        //let target_y = p.pos().y + acc.norm().y * F;
-                        let target_x = p.pos().x + p.velocity.get().x;
-                        let target_y = p.pos().y + p.velocity.get().y;
+            ctx.move_to(p.pos().x, p.pos().y);
+            ctx.line_to(target_x, target_y);
 
-                        ctx.move_to(p.pos().x, p.pos().y);
-                        ctx.line_to(target_x, target_y);
+            //let text = format!("acc: {}", acc.x);
+            //ctx.fill_text(&text, p.pos().x, p.pos().y).unwrap();
 
-                        //let text = format!("acc: {}", acc.x);
-                        //ctx.fill_text(&text, p.pos().x, p.pos().y).unwrap();
-
-                        //let text = format!("velocity: {}", p.velocity.get().x);
-                        //ctx.fill_text(&text, p.pos().x, p.pos().y + 20.0).unwrap();
-                        //let val: JsValue = dist.mag().into();
-                        //web_sys::console::log_1(&val);
-                    }
-                }
-            }
+            //let text = format!("velocity: {}", p.velocity.get().x);
+            //ctx.fill_text(&text, p.pos().x, p.pos().y + 20.0).unwrap();
+            //let val: JsValue = dist.mag().into();
+            //web_sys::console::log_1(&val);
 
             ctx.stroke();
             ctx.set_stroke_style(&"black".into());

@@ -28,30 +28,24 @@ use super::Point;
 
 #[allow(dead_code)]
 pub(crate) struct Planet {
-    pos: Point,
-    dir: Point,
+    pos: Cell<Point>,
     // Density D in kg/m³
     pub(crate) density: f64,
     // Radius r in m
     pub(crate) radius: f64,
-    // Speed s in m/s
-    pub(crate) speed: Cell<f64>,
-
     pub(crate) velocity: Cell<Point>,
 }
 
 #[allow(dead_code)]
 impl Planet {
     pub(crate) fn new(x: f64, y: f64, density: f64, radius: f64) -> Self {
-        let dir = Point { x: 5.0, y: 5.0 };
-        let speed = 1.0;
+        let velocity = Point { x: 1.0, y: 1.0 };
+
         Planet {
             density,
-            dir: dir.norm(),
-            pos: Point { x, y },
             radius,
-            speed: Cell::new(speed),
-            velocity: Cell::new(dir.norm() * speed),
+            pos: Cell::new(Point { x, y }),
+            velocity: Cell::new(velocity),
         }
     }
 
@@ -59,26 +53,23 @@ impl Planet {
         let mut rng = rand::thread_rng();
 
         let density = 5513.0;
-        let radius = rng.gen_range(3_000_000.0, 8_000_000.0);
+        let radius = rng.gen_range(10.0, 20.0);
 
-        let dir = Point {
-            x: rng.gen_range(-5.0, 5.0),
-            y: rng.gen_range(-5.0, 5.0),
-        };
         let pos = Point {
             x: rng.gen_range(0.0, 800.0),
             y: rng.gen_range(0.0, 600.0),
         };
-        let speed = rng.gen_range(1.0, 4.0);
+
+        let velocity = Point {
+            x: rng.gen_range(-3.0, 3.0),
+            y: rng.gen_range(-3.0, 3.0),
+        };
 
         Planet {
             density,
-            dir: dir.norm(),
-            pos,
             radius,
-            speed: Cell::new(speed),
-
-            velocity: Cell::new(dir.norm() * speed),
+            pos: Cell::new(pos),
+            velocity: Cell::new(velocity),
         }
     }
 
@@ -92,20 +83,20 @@ impl Planet {
         4.0 / 3.0 * PI * (self.radius as f64).powf(3.0)
     }
 
+    pub(crate) fn pos(&self) -> Point {
+        self.pos.get()
+    }
+
     pub(crate) fn accelerate(&self, acc: Point) {
         self.velocity.set(self.velocity.get() + acc);
         //self.speed.set(self.speed.get() + acc.mag() / self.mass());
     }
 
-    pub(crate) fn pos(&self) -> Point {
-        self.pos
-    }
-
-    pub(crate) fn mv(&mut self, max_x: f64, max_y: f64) {
+    pub(crate) fn mv(&self, max_x: f64, max_y: f64) {
         //let mut x = self.pos.x + self.dir.x * self.speed;
         //let mut y = self.pos.y - self.dir.y * self.speed;
-        let mut x = self.pos.x + self.velocity.get().x;
-        let mut y = self.pos.y + self.velocity.get().y;
+        let mut x = self.pos().x + self.velocity.get().x;
+        let mut y = self.pos().y + self.velocity.get().y;
 
         if x > max_x {
             x = x - max_x;
@@ -119,7 +110,7 @@ impl Planet {
             y = y + max_y;
         }
 
-        self.pos = Point { x, y };
+        self.pos.set(Point { x, y });
     }
 }
 
