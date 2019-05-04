@@ -1,9 +1,8 @@
 extern crate math;
 extern crate rand;
 
-//use math::round;
+use std::cell::RefCell;
 use std::f64::consts::PI;
-//use wasm_bindgen::prelude::*;
 
 use super::{Planet, Point};
 
@@ -14,23 +13,23 @@ type Canvas = web_sys::CanvasRenderingContext2d;
 /// direction of the force F:
 
 pub(crate) struct Universe {
-    dimensions: (f64, f64),
-    planets: Vec<Planet>,
+    planets: RefCell<Vec<Planet>>,
 }
 
 impl Universe {
-    pub(crate) fn new(width: f64, height: f64) -> Self {
+    pub(crate) fn new() -> Self {
         Universe {
-            dimensions: (width, height),
-            planets: vec![],
+            planets: RefCell::new(vec![]),
         }
     }
 
     pub(crate) fn init_random(&mut self) {
-        self.planets.push(Planet::new(400.0, 300.0, 8000.0, 50.0));
+        self.planets
+            .borrow_mut()
+            .push(Planet::new(400.0, 300.0, 8000.0, 20.0));
 
         for _i in 0..super::NO_OF_PLANETS {
-            self.planets.push(Planet::new_rng());
+            self.planets.borrow_mut().push(Planet::new_rng());
         }
 
         //self.planets
@@ -45,14 +44,16 @@ impl Universe {
 
         let scale_f = 10_f64.powf(4.0);
 
-        for (i, p) in self.planets.iter().enumerate() {
+        for (i, p) in self.planets.borrow().iter().enumerate() {
             let mut forces: Vec<Point> = vec![];
 
-            for (j, other_p) in self.planets.iter().enumerate() {
+            for (j, other_p) in self.planets.borrow().iter().enumerate() {
                 if i != j {
                     let direction = other_p.pos() - p.pos();
 
                     if direction.mag() <= p.radius {
+                        //p.eat(&other_p);
+                        other_p.dead.set(true);
                         continue;
                     } else {
                         let d = direction.mag();
@@ -69,8 +70,18 @@ impl Universe {
             net_force = forces.into_iter().fold(net_force, |acc, curr| acc + curr);
 
             p.accelerate(net_force * scale_f);
-            p.update(self.dimensions.0, self.dimensions.1);
+            p.update();
         }
+
+        let planets: Vec<Planet> = self
+            .planets
+            .borrow_mut()
+            .iter()
+            .filter(|p| !p.dead.get())
+            .map(|p| p.clone())
+            .collect();
+
+        self.planets.replace(planets);
     }
 
     #[allow(non_snake_case)]
@@ -78,7 +89,7 @@ impl Universe {
         ctx.set_stroke_style(&"hotpink".into());
         ctx.set_line_width(2.0);
 
-        for p in (&self.planets).iter() {
+        for p in self.planets.borrow().iter() {
             ctx.begin_path();
             ctx.set_font(&"16px Mono");
 

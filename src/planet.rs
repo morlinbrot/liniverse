@@ -4,7 +4,7 @@ use rand::Rng;
 use std::cell::Cell;
 use std::f64::consts::PI;
 
-use super::Point;
+use super::*;
 
 // Earth
 //let density = 5513.0;
@@ -27,6 +27,7 @@ use super::Point;
 //let mass = 6.419 * 10_f64.powf(23);
 
 #[allow(dead_code)]
+#[derive(Clone)]
 pub(crate) struct Planet {
     pos: Cell<Point>,
     // Density D in kg/m³
@@ -34,6 +35,7 @@ pub(crate) struct Planet {
     // Radius r in m
     pub(crate) radius: f64,
     pub(crate) velocity: Cell<Point>,
+    pub(crate) dead: Cell<bool>,
 }
 
 #[allow(dead_code)]
@@ -46,6 +48,7 @@ impl Planet {
             radius,
             pos: Cell::new(Point { x, y }),
             velocity: Cell::new(velocity),
+            dead: Cell::new(false),
         }
     }
 
@@ -56,8 +59,8 @@ impl Planet {
         let radius = rng.gen_range(5.0, 10.0);
 
         let pos = Point {
-            x: rng.gen_range(0.0, 800.0),
-            y: rng.gen_range(0.0, 600.0),
+            x: rng.gen_range(0.0, DIMENSIONS.0),
+            y: rng.gen_range(0.0, DIMENSIONS.1),
         };
 
         let velocity = Point {
@@ -70,6 +73,7 @@ impl Planet {
             radius,
             pos: Cell::new(pos),
             velocity: Cell::new(velocity),
+            dead: Cell::new(false),
         }
     }
 
@@ -89,7 +93,14 @@ impl Planet {
         self.velocity.set(self.velocity.get() + acc);
     }
 
-    pub(crate) fn update(&self, max_x: f64, max_y: f64) {
+    pub(crate) fn eat(&self, _other_p: &Planet) {
+        unimplemented!();
+    }
+
+    pub(crate) fn update(&self) {
+        let max_x = DIMENSIONS.0;
+        let max_y = DIMENSIONS.1;
+
         let mut x = self.pos().x + self.velocity.get().x;
         let mut y = self.pos().y + self.velocity.get().y;
 
@@ -108,6 +119,13 @@ impl Planet {
         self.pos.set(Point { x, y });
     }
 }
+
+//use std::iter::FromIterator;
+//impl<'a> FromIterator<&'a Planet> for Planet {
+//    fn from_iter<I: IntoIterator<Item = &'a Planet>>(iter: I) -> Self {
+//        Planet::new_rng()
+//    }
+//}
 
 impl std::fmt::Debug for Planet {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {

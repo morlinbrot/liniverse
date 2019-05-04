@@ -12,6 +12,7 @@ use planet::Planet;
 mod universe;
 use universe::Universe;
 
+const DIMENSIONS: (f64, f64) = (1080.0, 700.0);
 const NO_OF_PLANETS: usize = 100;
 const NO_OF_ITERATIONS: usize = 1000;
 
@@ -53,8 +54,6 @@ pub fn run() -> Result<(), JsValue> {
     let f = Rc::new(RefCell::new(None));
     let g = f.clone();
 
-    let dimensions = (1080.0, 700.0);
-
     let body = body();
 
     let context = canvas()
@@ -68,7 +67,7 @@ pub fn run() -> Result<(), JsValue> {
     status_div.set_id("status");
     body.append_child(&status_div)?;
 
-    let mut universe = Universe::new(dimensions.0, dimensions.1);
+    let mut universe = Universe::new();
     universe.init_random();
 
     let mut i = 0;
@@ -78,7 +77,7 @@ pub fn run() -> Result<(), JsValue> {
             return;
         }
 
-        context.clear_rect(0.0, 0.0, dimensions.0, dimensions.1);
+        context.clear_rect(0.0, 0.0, DIMENSIONS.0, DIMENSIONS.1);
         status_div.set_inner_html(&format!("Tick: {}", i));
 
         universe.tick();
