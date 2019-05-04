@@ -136,7 +136,7 @@ mod test {
     use super::*;
 
     #[test]
-    fn point_basics() {
+    fn basics() {
         let p1 = Point::new(1.0, 1.0);
         let p2 = Point::new(2.0, 2.0);
         assert_eq!(&p1 + &p2, Point { x: 3.0, y: 3.0 });

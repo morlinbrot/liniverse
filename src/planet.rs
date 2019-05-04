@@ -31,12 +31,15 @@ use super::*;
 #[allow(dead_code)]
 #[derive(Clone)]
 pub(crate) struct Planet {
+    /// Vector of the planet's current coordinates.
     pos: Cell<Point>,
-    // Density D in kg/m³
+    /// Density D in kg/m³.
     density: Cell<f64>,
-    // Radius r in m
+    /// Radius r in m.
     radius: Cell<f64>,
+    /// The vector at which the planet will travel on the next `update`.
     velocity: Cell<Point>,
+    /// Marks the planet to be removed from `universe`'s `planets`.
     dead: Cell<bool>,
 }
 
@@ -155,11 +158,48 @@ impl Planet {
     }
 }
 
-impl std::fmt::Debug for Planet {
+impl std::fmt::Display for Planet {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "X: {}", self.pos().x)?;
-        write!(f, "\nY")?;
-
+        writeln!(f, "{:>13}", "PLANET")?;
+        writeln!(f, "{:>12}: x: {}, y: {}", "Pos", self.pos().x, self.pos().y)?;
+        writeln!(f, "{:>12}: {}", "Density", self.density())?;
+        writeln!(f, "{:>12}: {}", "Radius", self.radius())?;
+        writeln!(
+            f,
+            "{:>12}: x: {}, y: {}",
+            "Velocity",
+            self.velocity().x,
+            self.velocity().y
+        )?;
+        writeln!(f, "{:>12}: {}", "Magnitude", self.velocity().mag())?;
+        writeln!(f, "{:>12}: {}", "Dead", self.dead())?;
+        writeln!(f, "{:>12}: {}", "Volume", self.volume())?;
+        writeln!(f, "{:>12}: {}", "Mass", self.mass())?;
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn basics() {
+        let v = Point::new(1.0, 1.0);
+        let p1 = Planet::new(10.0, 10.0, 1000.0, 10.0, v);
+        let _p2 = Planet::new(20.0, 20.0, 1000.0, 10.0, v);
+
+        assert_eq!(4188790.204786391, p1.mass());
+        assert_eq!(4188.790204786391, p1.volume());
+
+        p1.accelerate(Point::new(1.0, 1.0));
+        p1.update();
+        assert_eq!(Point::new(12.0, 12.0), p1.pos());
+
+        p1.accelerate(Point::new(DIMENSIONS.0, DIMENSIONS.1));
+        p1.update();
+        assert_eq!(Point::new(14.0, 14.0), p1.pos());
+
+        println!("{}", p1);
     }
 }
