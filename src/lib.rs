@@ -9,84 +9,86 @@ use point::Point;
 pub mod planet;
 use planet::Planet;
 
+mod renderloop;
+use renderloop::RenderLoop;
+
 mod universe;
 use universe::Universe;
 
 const DIMENSIONS: (f64, f64) = (1080.0, 700.0);
 const NO_OF_PLANETS: usize = 100;
-const NO_OF_ITERATIONS: usize = 10_000;
+const NO_OF_ITERATIONS: usize = 5_000;
 
-fn window() -> web_sys::Window {
-    web_sys::window().expect("Can't instantiate window object")
+#[allow(dead_code)]
+#[wasm_bindgen]
+pub struct ModuleHandler {
+    render_loop: Rc<RefCell<RenderLoop>>,
+    closures: Vec<Box<Drop>>,
 }
 
-fn request_animation_frame(f: &Closure<FnMut()>) {
-    window()
-        .request_animation_frame(f.as_ref().unchecked_ref())
-        .expect("Can't register requestAnimationFrame");
-}
-
-fn document() -> web_sys::Document {
-    window()
-        .document()
-        .expect("Can't instantiate document object")
-}
-
-fn body() -> web_sys::HtmlElement {
-    document().body().expect("Can't instantiate body")
-}
-
-fn canvas() -> web_sys::HtmlCanvasElement {
-    let c = document()
-        .get_element_by_id("canvas")
-        .expect("Can't instantiate canvas element");
-
-    let canvas: web_sys::HtmlCanvasElement = c
-        .dyn_into::<web_sys::HtmlCanvasElement>()
-        .map_err(|_| ())
-        .unwrap();
-
-    canvas
-}
-
-#[wasm_bindgen(start)]
-pub fn run() -> Result<(), JsValue> {
-    let f = Rc::new(RefCell::new(None));
-    let g = f.clone();
-
-    let body = body();
-
-    let context = canvas()
+#[wasm_bindgen]
+pub fn main(
+    canvas: web_sys::HtmlCanvasElement,
+    start_btn: web_sys::HtmlElement,
+    stop_btn: web_sys::HtmlElement,
+) -> Result<ModuleHandler, JsValue> {
+    let window = web_sys::window().expect("No window object.");
+    let universe = Rc::new(RefCell::new(Universe::new()));
+    let context = canvas
         .get_context("2d")
         .unwrap()
         .unwrap()
         .dyn_into::<web_sys::CanvasRenderingContext2d>()
         .unwrap();
 
-    let status_div = document().create_element("div")?;
-    status_div.set_id("status");
-    body.append_child(&status_div)?;
+    let mut closures: Vec<Box<Drop>> = Vec::new();
 
-    let mut universe = Universe::new();
-    universe.init_random();
+    let render_loop = Rc::new(RefCell::new(RenderLoop::new(
+        universe.clone(),
+        window.clone(),
+        start_btn.clone(),
+        stop_btn.clone(),
+        context,
+    )));
 
-    let mut i = 0;
-    *g.borrow_mut() = Some(Closure::wrap(Box::new(move || {
-        if i >= NO_OF_ITERATIONS {
-            let _ = f.borrow_mut().take();
-            return;
-        }
+    render_loop.borrow_mut().closure = Some({
+        let render_loop = render_loop.clone();
+        Closure::wrap(Box::new(move || {
+            render_loop.borrow_mut().render_loop();
+        }))
+    });
+    
+    {
+        let closure: Closure<Fn() -> _> = {
+            let render_loop = render_loop.clone();
+            Closure::wrap(Box::new(move || -> Result<(), JsValue> {
+                render_loop.borrow_mut().play()?;
+                Ok(())
+            }))
+        };
+        (start_btn.as_ref() as &web_sys::EventTarget)
+            .add_event_listener_with_callback("click", closure.as_ref().unchecked_ref())?;
+        closures.push(Box::new(closure));
+    }
 
-        context.clear_rect(0.0, 0.0, DIMENSIONS.0, DIMENSIONS.1);
-        status_div.set_inner_html(&format!("Tick: {}", i));
+    {
+        let closure: Closure<Fn() -> _> = {
+            let render_loop = render_loop.clone();
+            Closure::wrap(Box::new(move || -> Result<(), JsValue> {
+                render_loop.borrow_mut().pause()?;
+                Ok(())
+            }))
+        };
+        (stop_btn.as_ref() as &web_sys::EventTarget)
+            .add_event_listener_with_callback("click", closure.as_ref().unchecked_ref())?;
+        closures.push(Box::new(closure));
+    }
 
-        universe.tick();
-        universe.draw(&context);
+    universe.borrow_mut().init_random();
+    render_loop.borrow_mut().play()?;
 
-        i += 1;
-        request_animation_frame(f.borrow().as_ref().unwrap());
-    }) as Box<FnMut()>));
-
-    request_animation_frame(g.borrow().as_ref().unwrap());
-    Ok(())
+    Ok(ModuleHandler {
+        render_loop,
+        closures,
+    })
 }

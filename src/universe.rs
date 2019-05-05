@@ -1,4 +1,3 @@
-extern crate math;
 extern crate rand;
 
 use std::cell::RefCell;
@@ -8,7 +7,7 @@ use super::*;
 
 type Canvas = web_sys::CanvasRenderingContext2d;
 
-pub(crate) struct Universe {
+pub struct Universe {
     planets: RefCell<Vec<Planet>>,
 }
 
@@ -123,6 +122,7 @@ impl Universe {
 
     #[allow(non_snake_case)]
     pub(crate) fn draw<'a>(&self, ctx: &'a Canvas) -> &'a Canvas {
+        ctx.clear_rect(0.0, 0.0, DIMENSIONS.0, DIMENSIONS.1);
         ctx.set_stroke_style(&"hotpink".into());
         ctx.set_fill_style(&"black".into());
         ctx.set_line_width(4.0);
