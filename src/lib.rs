@@ -15,8 +15,12 @@ use renderloop::RenderLoop;
 mod universe;
 use universe::Universe;
 
-const DIMENSIONS: (f64, f64) = (1080.0, 700.0);
 const NO_OF_PLANETS: usize = 100;
+
+fn get_dimensions(canvas: &web_sys::HtmlCanvasElement) -> (f64, f64) {
+    let bounding_rect = (canvas.as_ref() as &web_sys::Element).get_bounding_client_rect();
+    (bounding_rect.width(), bounding_rect.height())
+}
 
 #[allow(dead_code)]
 #[wasm_bindgen]
@@ -28,10 +32,12 @@ pub struct ModuleHandler {
 #[wasm_bindgen]
 pub fn main(
     canvas: web_sys::HtmlCanvasElement,
+    restart_btn: web_sys::HtmlElement,
     play_pause_btn: web_sys::HtmlElement,
 ) -> Result<ModuleHandler, JsValue> {
     let window = web_sys::window().expect("No window object.");
-    let universe = Rc::new(RefCell::new(Universe::new()));
+    let dimensions = get_dimensions(&canvas);
+    let universe = Rc::new(RefCell::new(Universe::new(dimensions)));
     let context = canvas
         .get_context("2d")
         .unwrap()
@@ -64,6 +70,43 @@ pub fn main(
             }))
         };
         (play_pause_btn.as_ref() as &web_sys::EventTarget)
+            .add_event_listener_with_callback("click", closure.as_ref().unchecked_ref())?;
+        closures.push(Box::new(closure));
+    }
+
+    {
+        let closure: Closure<Fn() -> _> = {
+            let render_loop = render_loop.clone();
+            Closure::wrap(Box::new(move || -> Result<(), JsValue> {
+                if render_loop.borrow().is_running() {
+                    render_loop.borrow_mut().pause()?;
+                }
+                let mut universe = Universe::new(dimensions);
+                universe.init_random();
+                render_loop.borrow_mut().replace_universe(universe);
+                render_loop.borrow_mut().play()?;
+                Ok(())
+            }))
+        };
+        (restart_btn.as_ref() as &web_sys::EventTarget)
+            .add_event_listener_with_callback("click", closure.as_ref().unchecked_ref())?;
+        closures.push(Box::new(closure));
+    }
+
+    {
+        let closure: Closure<Fn(_)> = {
+            let universe = universe.clone();
+            let canvas = canvas.clone();
+            Closure::wrap(Box::new(move |event: web_sys::MouseEvent| {
+                let bounding_rect =
+                    (canvas.as_ref() as &web_sys::Element).get_bounding_client_rect();
+                let x = event.client_x() as f64 - bounding_rect.left();
+                let y = event.client_y() as f64 - bounding_rect.top();
+
+                universe.borrow_mut().add_planet(x, y);
+            }))
+        };
+        (canvas.as_ref() as &web_sys::EventTarget)
             .add_event_listener_with_callback("click", closure.as_ref().unchecked_ref())?;
         closures.push(Box::new(closure));
     }

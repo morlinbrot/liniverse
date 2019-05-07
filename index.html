@@ -1,16 +1,36 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <meta content="text/html;charset=utf-8" http-equiv="Content-Type"/>
-  </head>
-  <body>
-    <div id="app-wrapper">
-      <div id="canvas-wrapper">
-          <canvas id="canvas" width="1080" height="700" style="border: 1px solid hotpink"/>
-      </div>
-      <div id="control-center">
-        <button id="start-btn">▶</button>
-      </div>
-    </div>
-  </body>
+    <head>
+        <meta content="text/html;charset=utf-8" http-equiv="Content-Type"/>
+        <title>the liniverse</title>
+        <style>
+            body {
+                margin: 0;
+                padding: 0;
+                background-color: black;
+            }
+
+            #canvas {
+                position: absolute;
+                top: 0;
+                bottom: 0;
+                left: 0;
+                right: 0;
+
+                margin: auto;
+                display: block;
+
+                border: 1px solid magenta;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="app-wrapper">
+            <div id="controls">
+              <button id="restart-btn">↻</button>
+              <button id="play-pause-btn">▶</button>
+            </div>
+            <canvas id="canvas" />
+        </div>
+    </body>
 </html>

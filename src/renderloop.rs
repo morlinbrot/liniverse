@@ -53,6 +53,14 @@ impl RenderLoop {
         }
     }
 
+    pub fn replace_universe(&mut self, universe: Universe) {
+        let _ = self.universe.replace(universe);
+    }
+
+    pub fn is_running(&self) -> bool {
+        self.animation_id.is_some()
+    }
+
     pub fn play(&mut self) -> Result<(), JsValue> {
         (self.play_pause_btn.as_ref() as &web_sys::Node).set_text_content(Some("⏸"));
         self.render_loop();
@@ -69,10 +77,10 @@ impl RenderLoop {
     }
 
     pub fn play_pause(&mut self) -> Result<(), JsValue> {
-        if self.animation_id.is_none() {
-            self.play()
-        } else {
+        if self.is_running() {
             self.pause()
+        } else {
+            self.play()
         }
     }
 }

@@ -56,16 +56,36 @@ impl Planet {
         }
     }
 
+    pub(crate) fn new_semi_rng(x: f64, y: f64) -> Self {
+        let mut rng = rand::thread_rng();
+
+        let density = 5_000.0;
+        let radius = rng.gen_range(10.0, 12.0);
+
+        let velocity = Point {
+            x: rng.gen_range(-0.2, 1.5),
+            y: rng.gen_range(-0.2, 1.5),
+        };
+
+        Planet {
+            density: Cell::new(density),
+            radius: Cell::new(radius),
+            pos: Cell::new(Point { x, y }),
+            velocity: Cell::new(velocity),
+            dead: Cell::new(false),
+        }
+    }
+
     /// Create a planet with randomly generated parameters.
-    pub(crate) fn new_rng() -> Self {
+    pub(crate) fn new_rng(dimensions: (f64, f64)) -> Self {
         let mut rng = rand::thread_rng();
 
         let density = 5513.0;
         let radius = rng.gen_range(5.0, 10.0);
 
         let pos = Point {
-            x: rng.gen_range(0.0, DIMENSIONS.0),
-            y: rng.gen_range(0.0, DIMENSIONS.1),
+            x: rng.gen_range(0.0, dimensions.0),
+            y: rng.gen_range(0.0, dimensions.1),
         };
 
         let velocity = Point {
@@ -135,9 +155,9 @@ impl Planet {
 
     /// Update the planets position by adding its velocity to its current position.
     /// If it moves out of the universe's dimensions, it's inserted on the other side.
-    pub(crate) fn update(&self) {
-        let max_x = DIMENSIONS.0;
-        let max_y = DIMENSIONS.1;
+    pub(crate) fn update(&self, dimensions: (f64, f64)) {
+        let max_x = dimensions.0;
+        let max_y = dimensions.1;
 
         let mut x = self.pos().x + self.velocity().x;
         let mut y = self.pos().y + self.velocity().y;

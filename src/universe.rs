@@ -8,12 +8,14 @@ use super::*;
 type Canvas = web_sys::CanvasRenderingContext2d;
 
 pub struct Universe {
+    dimensions: (f64, f64),
     planets: RefCell<Vec<Planet>>,
 }
 
 impl Universe {
-    pub(crate) fn new() -> Self {
+    pub(crate) fn new(dimensions: (f64, f64)) -> Self {
         Universe {
+            dimensions,
             planets: RefCell::new(vec![]),
         }
     }
@@ -21,8 +23,8 @@ impl Universe {
     pub(crate) fn init_random(&mut self) {
         //let mut rng = rand::thread_rng();
         self.planets.borrow_mut().push(Planet::new(
-            DIMENSIONS.0 / 2.0,
-            DIMENSIONS.1 / 2.0,
+            self.dimensions.0 / 2.0,
+            self.dimensions.1 / 2.0,
             6_000.0,
             20.0,
             Point {
@@ -34,7 +36,9 @@ impl Universe {
         ));
 
         for _i in 0..super::NO_OF_PLANETS {
-            self.planets.borrow_mut().push(Planet::new_rng());
+            self.planets
+                .borrow_mut()
+                .push(Planet::new_rng(self.dimensions));
         }
 
         //self.planets
@@ -46,6 +50,10 @@ impl Universe {
     #[allow(dead_code)]
     pub(crate) fn log(&self, val: &JsValue) {
         web_sys::console::log_1(&val);
+    }
+
+    pub(crate) fn add_planet(&mut self, x: f64, y: f64) {
+        self.planets.borrow_mut().push(Planet::new_semi_rng(x, y));
     }
 
     /// The main computation of the universe. In a nested loop, we look at each planet,
@@ -105,7 +113,7 @@ impl Universe {
 
             // Let's have Sun stay in the middle of the universe.
             if i > 0 {
-                p.update();
+                p.update(self.dimensions);
             }
         }
 
@@ -122,8 +130,8 @@ impl Universe {
 
     #[allow(non_snake_case)]
     pub(crate) fn draw<'a>(&self, ctx: &'a Canvas) -> &'a Canvas {
-        ctx.clear_rect(0.0, 0.0, DIMENSIONS.0, DIMENSIONS.1);
-        ctx.set_stroke_style(&"hotpink".into());
+        ctx.clear_rect(0.0, 0.0, self.dimensions.0, self.dimensions.1);
+        ctx.set_stroke_style(&"magenta".into());
         ctx.set_fill_style(&"black".into());
         ctx.set_line_width(4.0);
 
@@ -136,8 +144,8 @@ impl Universe {
 
             ctx.stroke();
             ctx.fill();
-            ctx.set_stroke_style(&"deepskyblue".into());
-            ctx.set_fill_style(&"black".into());
+            ctx.set_stroke_style(&"white".into());
+            ctx.set_fill_style(&"gray".into());
         }
 
         ctx
