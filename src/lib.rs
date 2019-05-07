@@ -17,7 +17,6 @@ use universe::Universe;
 
 const DIMENSIONS: (f64, f64) = (1080.0, 700.0);
 const NO_OF_PLANETS: usize = 100;
-const NO_OF_ITERATIONS: usize = 5_000;
 
 #[allow(dead_code)]
 #[wasm_bindgen]
@@ -29,8 +28,7 @@ pub struct ModuleHandler {
 #[wasm_bindgen]
 pub fn main(
     canvas: web_sys::HtmlCanvasElement,
-    start_btn: web_sys::HtmlElement,
-    stop_btn: web_sys::HtmlElement,
+    play_pause_btn: web_sys::HtmlElement,
 ) -> Result<ModuleHandler, JsValue> {
     let window = web_sys::window().expect("No window object.");
     let universe = Rc::new(RefCell::new(Universe::new()));
@@ -46,8 +44,7 @@ pub fn main(
     let render_loop = Rc::new(RefCell::new(RenderLoop::new(
         universe.clone(),
         window.clone(),
-        start_btn.clone(),
-        stop_btn.clone(),
+        play_pause_btn.clone(),
         context,
     )));
 
@@ -57,29 +54,16 @@ pub fn main(
             render_loop.borrow_mut().render_loop();
         }))
     });
-    
-    {
-        let closure: Closure<Fn() -> _> = {
-            let render_loop = render_loop.clone();
-            Closure::wrap(Box::new(move || -> Result<(), JsValue> {
-                render_loop.borrow_mut().play()?;
-                Ok(())
-            }))
-        };
-        (start_btn.as_ref() as &web_sys::EventTarget)
-            .add_event_listener_with_callback("click", closure.as_ref().unchecked_ref())?;
-        closures.push(Box::new(closure));
-    }
 
     {
         let closure: Closure<Fn() -> _> = {
             let render_loop = render_loop.clone();
             Closure::wrap(Box::new(move || -> Result<(), JsValue> {
-                render_loop.borrow_mut().pause()?;
+                render_loop.borrow_mut().play_pause()?;
                 Ok(())
             }))
         };
-        (stop_btn.as_ref() as &web_sys::EventTarget)
+        (play_pause_btn.as_ref() as &web_sys::EventTarget)
             .add_event_listener_with_callback("click", closure.as_ref().unchecked_ref())?;
         closures.push(Box::new(closure));
     }
