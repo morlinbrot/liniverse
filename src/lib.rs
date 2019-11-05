@@ -15,6 +15,9 @@ use renderloop::RenderLoop;
 mod universe;
 use universe::Universe;
 
+mod rect;
+use rect::QuadNode;
+
 const NO_OF_PLANETS: usize = 100;
 
 fn get_dimensions(canvas: &web_sys::HtmlCanvasElement) -> (f64, f64) {
@@ -26,7 +29,7 @@ fn get_dimensions(canvas: &web_sys::HtmlCanvasElement) -> (f64, f64) {
 #[wasm_bindgen]
 pub struct ModuleHandler {
     render_loop: Rc<RefCell<RenderLoop>>,
-    closures: Vec<Box<Drop>>,
+    closures: Vec<Box<dyn Drop>>,
 }
 
 #[wasm_bindgen]
@@ -45,7 +48,7 @@ pub fn main(
         .dyn_into::<web_sys::CanvasRenderingContext2d>()
         .unwrap();
 
-    let mut closures: Vec<Box<Drop>> = Vec::new();
+    let mut closures: Vec<Box<dyn Drop>> = Vec::new();
 
     let render_loop = Rc::new(RefCell::new(RenderLoop::new(
         universe.clone(),
@@ -62,7 +65,7 @@ pub fn main(
     });
 
     {
-        let closure: Closure<Fn() -> _> = {
+        let closure: Closure<dyn Fn() -> _> = {
             let render_loop = render_loop.clone();
             Closure::wrap(Box::new(move || -> Result<(), JsValue> {
                 render_loop.borrow_mut().play_pause()?;
@@ -75,7 +78,7 @@ pub fn main(
     }
 
     {
-        let closure: Closure<Fn() -> _> = {
+        let closure: Closure<dyn Fn() -> _> = {
             let render_loop = render_loop.clone();
             Closure::wrap(Box::new(move || -> Result<(), JsValue> {
                 if render_loop.borrow().is_running() {
@@ -94,7 +97,7 @@ pub fn main(
     }
 
     {
-        let closure: Closure<Fn(_)> = {
+        let closure: Closure<dyn Fn(_)> = {
             let universe = universe.clone();
             let canvas = canvas.clone();
             Closure::wrap(Box::new(move |event: web_sys::MouseEvent| {

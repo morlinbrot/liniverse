@@ -10,7 +10,7 @@ pub struct RenderLoop {
     universe: Rc<RefCell<Universe>>,
     window: web_sys::Window,
     play_pause_btn: web_sys::HtmlElement,
-    pub closure: Option<Closure<Fn()>>,
+    pub closure: Option<Closure<dyn Fn()>>,
 
     context: web_sys::CanvasRenderingContext2d,
 }
