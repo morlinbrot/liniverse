@@ -16,12 +16,12 @@ use super::*;
 //let density = 1409.0;
 //let mass = 7.9897 * 10_f64.powf(30);
 
-//// Moon
+// Moon
 //let radius = 1737.0;
 //let density = 3344.0;
 //let mass = 7.348 * 10_f64.powf(22);
 
-//// Mars
+// Mars
 //let radius = 3389.5;
 //let density = 3934;
 //let mass = 6.419 * 10_f64.powf(23);
@@ -134,7 +134,7 @@ impl Planet {
         self.density() * self.volume()
     }
 
-    /// Add a given acceleration to the planet's velocity. The acceleration vector should
+    /// Add a given acceleration to the planet's velocity. The acceleration vector
     /// should represent the single net force to be applied each tick.
     pub(crate) fn accelerate(&self, acc: Point) {
         self.velocity.set(self.velocity.get() + acc);
@@ -153,7 +153,7 @@ impl Planet {
         self.radius.set(r);
     }
 
-    /// Update the planets position by adding its velocity to its current position.
+    /// Update the planet's position by adding its velocity to its current position.
     /// If it moves out of the universe's dimensions, it's inserted on the other side.
     pub(crate) fn update(&self, dimensions: (f64, f64)) {
         let max_x = dimensions.0;
@@ -208,18 +208,20 @@ mod test {
         let v = Point::new(1.0, 1.0);
         let p1 = Planet::new(10.0, 10.0, 1000.0, 10.0, v);
         let _p2 = Planet::new(20.0, 20.0, 1000.0, 10.0, v);
+        let dimensions = (800.0, 600.0);
 
         assert_eq!(4188790.204786391, p1.mass());
         assert_eq!(4188.790204786391, p1.volume());
 
         p1.accelerate(Point::new(1.0, 1.0));
-        p1.update();
+        p1.update(dimensions);
         assert_eq!(Point::new(12.0, 12.0), p1.pos());
 
-        p1.accelerate(Point::new(DIMENSIONS.0, DIMENSIONS.1));
-        p1.update();
+        p1.accelerate(Point::new(dimensions.0, dimensions.1));
+        p1.update(dimensions);
         assert_eq!(Point::new(14.0, 14.0), p1.pos());
 
+        // Run `cargo test -- --nocapture` to see `println!` output.
         println!("{}", p1);
     }
 }
