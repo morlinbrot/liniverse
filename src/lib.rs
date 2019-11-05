@@ -9,6 +9,12 @@ use point::Point;
 pub mod planet;
 use planet::Planet;
 
+mod quadnode;
+use quadnode::QuadNode;
+
+mod rect;
+use rect::Rect;
+
 mod renderloop;
 use renderloop::RenderLoop;
 
