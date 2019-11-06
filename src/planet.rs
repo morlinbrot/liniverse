@@ -178,6 +178,16 @@ impl Planet {
     }
 }
 
+impl super::quadnode::QuadNodeBody for Planet {
+    fn center(&self) -> Point {
+        self.pos.get()
+    }
+
+    fn mass(&self) -> f64 {
+        self.mass()
+    }
+}
+
 impl std::fmt::Display for Planet {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         writeln!(f, "{:>13}", "PLANET")?;
