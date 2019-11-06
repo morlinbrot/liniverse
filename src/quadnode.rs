@@ -45,7 +45,7 @@ impl<T: QuadNodeBody> QuadNode<T> {
     }
 
     pub fn insert(&mut self, body: T) -> Result<(), std::io::Error> {
-        if self.bodies.len() <= self.capacity {
+        if self.bodies.len() < self.capacity {
             self.bodies.push(body);
             return Ok(());
         }
@@ -98,21 +98,37 @@ impl<T: QuadNodeBody> QuadNode<T> {
 mod test {
     use super::*;
 
-    #[test]
-    fn basics() {
+    fn init() -> QuadNode<Body> {
         let dimensions = (100.0, 100.0);
         let bounds = Rect::new(1.0, 1.0, dimensions.0, dimensions.1);
-        let mut qnode = QuadNode::new(2, bounds);
+        QuadNode::new(1, bounds)
+    }
+
+    #[test]
+    fn insert() {
+        let mut qnode = init();
         let b1 = Body {
             center: Point::new(2.0, 2.0),
             mass: 10.0,
         };
-        let b2 = Body {
-            center: Point::new(3.0, 3.0),
-            mass: 10.0,
-        };
         qnode.insert(b1).unwrap();
-        qnode.insert(b2).unwrap();
-        assert_eq!(qnode.bodies.len(), 2);
+        assert_eq!(qnode.bodies.len(), 1);
+    }
+
+    #[test]
+    fn insert_and_subdivide() {
+        //let mut qnode = init();
+        //let b1 = Body {
+        //    center: Point::new(2.0, 2.0),
+        //    mass: 10.0,
+        //};
+        //let b2 = Body {
+        //    center: Point::new(3.0, 3.0),
+        //    mass: 10.0,
+        //};
+        //qnode.insert(b1).unwrap();
+        //qnode.insert(b2).unwrap();
+        //assert_eq!(qnode.bodies.len(), 0);
+        //assert!(qnode.nodes.is_some());
     }
 }
