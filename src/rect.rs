@@ -1,5 +1,6 @@
 use super::*;
 
+/// A cardinal direction.
 pub enum Cardinal {
     NW,
     NE,
@@ -7,6 +8,7 @@ pub enum Cardinal {
     SW,
 }
 
+/// A struct representing a rectangular plane in a cartesian coordinate system.
 #[derive(Debug, PartialEq)]
 pub struct Rect {
     x: f64,
@@ -15,9 +17,8 @@ pub struct Rect {
     height: f64,
 }
 
-/// A struct representing a rectangular plane in a cartesian coordinate system.
-/// X and y co-ordinates specify the *center* of the rectangle.
 impl Rect {
+    /// X and y co-ordinates specify the *center* of the rectangle.
     pub fn new(x: f64, y: f64, width: f64, height: f64) -> Self {
         Self {
             x,
@@ -34,12 +35,12 @@ impl Rect {
         p.x > nw.x && p.x < se.x && p.y > nw.y && p.y < se.y
     }
 
-    /// Return a Point at the center of the rectangle.
+    /// Return a [`Point`](../point/struct.Point.html) at the center of the rectangle.
     pub fn center(&self) -> Point {
         Point::new(self.x, self.y)
     }
 
-    /// Return a Point representing the specified corner of the rectangle.
+    /// Return a [`Point`](../point/struct.Point.html) representing the specified corner of the rectangle.
     pub fn corner(&self, corner: Cardinal) -> Point {
         let half_w = self.half_width();
         let half_h = self.half_height();
@@ -51,7 +52,7 @@ impl Rect {
         }
     }
 
-    /// Return a Rect covering the area from the center to the specified corner.
+    /// Return a [`Rect`](../rect/struct.Rect.html) covering the area from the center to the specified corner.
     pub fn split_rect(&self, c: Cardinal) -> Self {
         let x = self.center().x;
         let y = self.center().y;

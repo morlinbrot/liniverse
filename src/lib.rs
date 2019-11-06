@@ -1,3 +1,12 @@
+//! Provides some tools to simulate the gravitational forces between bodies in space.
+//!
+//! We use [`wasm_bindgen`](https://github.com/rustwasm/wasm-bindgen) to access JavaScript events
+//! and use HTML elements like canvas.
+//!
+//! On each [`tick`](./universe/struct.Universe.html#method.tick) of the
+//! [`Universe`](./universe/struct.Universe.html), we compute the forces at play, update a [`Planet`](./planet/struct.Planet.html)'s
+//! position and [`draw`](./universe/struct.Universe.html#method.draw) everything out onto the canvas
+//! inside our [`RenderLoop`](./renderloop/struct.RenderLoop.html).
 use std::cell::RefCell;
 use std::rc::Rc;
 use wasm_bindgen::prelude::*;

@@ -26,8 +26,10 @@ use super::*;
 //let density = 3934;
 //let mass = 6.419 * 10_f64.powf(23);
 
+/// A full blown planet living inside our [`Universe`](../universe/struct.Universe.html).
+///
 /// We're using `Cell` and the interior mutability pattern to be able to loop over immutable
-/// references of planets during `tick` and still be able to mutate the fields.
+/// references to `Planet`s on each [`tick`](../universe/struct.Universe.html#method.tick) and still be able to mutate the fields.
 #[allow(dead_code)]
 #[derive(Clone)]
 pub(crate) struct Planet {
@@ -37,15 +39,16 @@ pub(crate) struct Planet {
     density: Cell<f64>,
     /// Radius r in m.
     radius: Cell<f64>,
-    /// The vector at which the planet will travel on the next `update`.
+    /// The vector at which the planet will travel on the next
+    /// [`update`](../planet/struct.Planet.html#method.update).
     velocity: Cell<Point>,
-    /// Marks the planet to be removed from `universe`'s `planets`.
+    /// Marks the planet to be removed from [`Universe`](../universe/struct.Universe.html)'s `planets`.
     dead: Cell<bool>,
 }
 
 #[allow(dead_code, non_snake_case)]
 impl Planet {
-    /// Create a planet with given parameters.
+    /// Create a `Planet` with given parameters.
     pub(crate) fn new(x: f64, y: f64, density: f64, radius: f64, velocity: Point) -> Self {
         Planet {
             density: Cell::new(density),
@@ -56,27 +59,7 @@ impl Planet {
         }
     }
 
-    pub(crate) fn new_semi_rng(x: f64, y: f64) -> Self {
-        let mut rng = rand::thread_rng();
-
-        let density = 5_000.0;
-        let radius = rng.gen_range(10.0, 12.0);
-
-        let velocity = Point {
-            x: rng.gen_range(-0.2, 1.5),
-            y: rng.gen_range(-0.2, 1.5),
-        };
-
-        Planet {
-            density: Cell::new(density),
-            radius: Cell::new(radius),
-            pos: Cell::new(Point { x, y }),
-            velocity: Cell::new(velocity),
-            dead: Cell::new(false),
-        }
-    }
-
-    /// Create a planet with randomly generated parameters.
+    /// Create a `Planet` with randomly generated parameters.
     pub(crate) fn new_rng(dimensions: (f64, f64)) -> Self {
         let mut rng = rand::thread_rng();
 
@@ -102,59 +85,29 @@ impl Planet {
         }
     }
 
-    pub(crate) fn pos(&self) -> Point {
-        self.pos.get()
-    }
+    /// Create a `Planet` with randomly generated parameters at a specified position.
+    pub(crate) fn new_semi_rng(x: f64, y: f64) -> Self {
+        let mut rng = rand::thread_rng();
 
-    pub(crate) fn dead(&self) -> bool {
-        self.dead.get()
-    }
+        let density = 5_000.0;
+        let radius = rng.gen_range(10.0, 12.0);
 
-    pub(crate) fn die(&self) {
-        self.dead.set(true)
-    }
+        let velocity = Point {
+            x: rng.gen_range(-0.2, 1.5),
+            y: rng.gen_range(-0.2, 1.5),
+        };
 
-    pub(crate) fn radius(&self) -> f64 {
-        self.radius.get()
-    }
-
-    fn density(&self) -> f64 {
-        self.density.get()
-    }
-
-    fn velocity(&self) -> Point {
-        self.velocity.get()
-    }
-
-    fn volume(&self) -> f64 {
-        4.0 / 3.0 * PI * (self.radius() as f64).powf(3.0)
-    }
-
-    pub(crate) fn mass(&self) -> f64 {
-        self.density() * self.volume()
-    }
-
-    /// Add a given acceleration to the planet's velocity. The acceleration vector
-    /// should represent the single net force to be applied each tick.
-    pub(crate) fn accelerate(&self, acc: Point) {
-        self.velocity.set(self.velocity.get() + acc);
-    }
-
-    /// Add two masses together, calculate the new volume and derive a new radius.
-    /// V = m/D
-    /// V = 4 / 3 * π * radius³
-    /// r³ = V / (4 / 3 * π)
-    pub(crate) fn eat(&self, other_p: &Planet) {
-        let m = self.mass() + other_p.mass();
-        let D = (self.density() + other_p.density()) / 2.0;
-        let V = m / D;
-
-        let r = (V / (4.0 / 3.0 * PI)).cbrt();
-        self.radius.set(r);
+        Planet {
+            density: Cell::new(density),
+            radius: Cell::new(radius),
+            pos: Cell::new(Point { x, y }),
+            velocity: Cell::new(velocity),
+            dead: Cell::new(false),
+        }
     }
 
     /// Update the planet's position by adding its velocity to its current position.
-    /// If it moves out of the universe's dimensions, it's inserted on the other side.
+    /// If it moves out of the universe's dimensions, it's inserted back in on the other side.
     pub(crate) fn update(&self, dimensions: (f64, f64)) {
         let max_x = dimensions.0;
         let max_y = dimensions.1;
@@ -175,6 +128,57 @@ impl Planet {
         }
 
         self.pos.set(Point { x, y });
+    }
+
+    /// Add two masses together, calculate the new volume and derive a new radius.
+    /// V = m/D
+    /// V = 4 / 3 * π * radius³
+    /// r³ = V / (4 / 3 * π)
+    pub(crate) fn eat(&self, other_p: &Planet) {
+        let m = self.mass() + other_p.mass();
+        let D = (self.density() + other_p.density()) / 2.0;
+        let V = m / D;
+
+        let r = (V / (4.0 / 3.0 * PI)).cbrt();
+        self.radius.set(r);
+    }
+
+    /// Add a given acceleration to the planet's velocity. The acceleration vector
+    /// should represent the single net force to be applied each tick.
+    pub(crate) fn accelerate(&self, acc: Point) {
+        self.velocity.set(self.velocity.get() + acc);
+    }
+
+    pub(crate) fn pos(&self) -> Point {
+        self.pos.get()
+    }
+
+    pub(crate) fn dead(&self) -> bool {
+        self.dead.get()
+    }
+
+    pub(crate) fn die(&self) {
+        self.dead.set(true)
+    }
+
+    pub(crate) fn radius(&self) -> f64 {
+        self.radius.get()
+    }
+
+    pub(crate) fn mass(&self) -> f64 {
+        self.density() * self.volume()
+    }
+
+    fn density(&self) -> f64 {
+        self.density.get()
+    }
+
+    fn velocity(&self) -> Point {
+        self.velocity.get()
+    }
+
+    fn volume(&self) -> f64 {
+        4.0 / 3.0 * PI * (self.radius() as f64).powf(3.0)
     }
 }
 
