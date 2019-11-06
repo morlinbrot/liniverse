@@ -1,6 +1,10 @@
 // Implementation following
 // http://arborjs.org/docs/barnes-hut
-use super::{planet::Planet, point::Point, rect::Rect};
+use super::{
+    planet::Planet,
+    point::Point,
+    rect::{Cardinal, Rect},
+};
 
 pub struct Body {
     center: Point,
@@ -27,7 +31,7 @@ pub struct QuadNode<T> {
     center_of_mass: Point,
     bodies: Vec<T>,
     mass: Option<f64>,
-    nodes: Option<Box<Vec<Self>>>,
+    nodes: Option<Box<[Self; 4]>>,
     rect: Rect,
 }
 
@@ -58,7 +62,6 @@ impl<T: QuadNodeBody> QuadNode<T> {
         bodies.append(&mut self.bodies);
 
         for body in bodies {
-            // TODO: Update center of mass and total mass
             self.update_mass(&body);
 
             for node in self.nodes.as_mut().unwrap().iter_mut() {
@@ -72,8 +75,13 @@ impl<T: QuadNodeBody> QuadNode<T> {
         Ok(())
     }
 
-    fn subdivide(&self) {
-        unimplemented!();
+    fn subdivide(&mut self) {
+        self.nodes = Some(Box::new([
+            Self::new(self.capacity, self.rect.split_rect(Cardinal::NW)),
+            Self::new(self.capacity, self.rect.split_rect(Cardinal::NE)),
+            Self::new(self.capacity, self.rect.split_rect(Cardinal::SE)),
+            Self::new(self.capacity, self.rect.split_rect(Cardinal::SW)),
+        ]));
     }
 
     fn update_mass(&mut self, b: &T) {
@@ -98,15 +106,16 @@ impl<T: QuadNodeBody> QuadNode<T> {
 mod test {
     use super::*;
 
-    fn init() -> QuadNode<Body> {
-        let dimensions = (100.0, 100.0);
-        let bounds = Rect::new(1.0, 1.0, dimensions.0, dimensions.1);
+    fn setup() -> QuadNode<Body> {
+        let width = 100.00;
+        let height = 100.0;
+        let bounds = Rect::new(width / 2.0, height / 2.0, width, height);
         QuadNode::new(1, bounds)
     }
 
     #[test]
     fn insert() {
-        let mut qnode = init();
+        let mut qnode = setup();
         let b1 = Body {
             center: Point::new(2.0, 2.0),
             mass: 10.0,
@@ -117,18 +126,18 @@ mod test {
 
     #[test]
     fn insert_and_subdivide() {
-        //let mut qnode = init();
-        //let b1 = Body {
-        //    center: Point::new(2.0, 2.0),
-        //    mass: 10.0,
-        //};
-        //let b2 = Body {
-        //    center: Point::new(3.0, 3.0),
-        //    mass: 10.0,
-        //};
-        //qnode.insert(b1).unwrap();
-        //qnode.insert(b2).unwrap();
-        //assert_eq!(qnode.bodies.len(), 0);
-        //assert!(qnode.nodes.is_some());
+        let mut qnode = setup();
+        let b1 = Body {
+            center: Point::new(2.0, 2.0),
+            mass: 10.0,
+        };
+        let b2 = Body {
+            center: Point::new(3.0, 3.0),
+            mass: 10.0,
+        };
+        qnode.insert(b1).unwrap();
+        qnode.insert(b2).unwrap();
+        assert_eq!(qnode.bodies.len(), 0);
+        assert!(qnode.nodes.is_some());
     }
 }
