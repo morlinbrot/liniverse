@@ -60,10 +60,10 @@ impl Rect {
         let half_h = self.half_height();
 
         match c {
-            Cardinal::NW => Self::new(x - half_w, y + half_h, half_w, half_h),
-            Cardinal::NE => Self::new(x + half_w, y + half_h, half_w, half_h),
-            Cardinal::SE => Self::new(x + half_w, y - half_h, half_w, half_h),
-            Cardinal::SW => Self::new(x - half_w, y - half_h, half_w, half_h),
+            Cardinal::NW => Self::new(x - half_w / 2.0, y + half_h / 2.0, half_w, half_h),
+            Cardinal::NE => Self::new(x + half_w / 2.0, y + half_h / 2.0, half_w, half_h),
+            Cardinal::SE => Self::new(x + half_w / 2.0, y - half_h / 2.0, half_w, half_h),
+            Cardinal::SW => Self::new(x - half_w / 2.0, y - half_h / 2.0, half_w, half_h),
         }
     }
 
