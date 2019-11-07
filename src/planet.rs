@@ -3,6 +3,7 @@ extern crate rand;
 use rand::Rng;
 use std::cell::Cell;
 use std::f64::consts::PI;
+use uuid::Uuid;
 
 use super::*;
 
@@ -33,6 +34,7 @@ use super::*;
 #[allow(dead_code)]
 #[derive(Clone)]
 pub(crate) struct Planet {
+    id: Uuid,
     /// Vector of the planet's current coordinates.
     pos: Cell<Point>,
     /// Density D in kg/m³.
@@ -51,6 +53,7 @@ impl Planet {
     /// Create a `Planet` with given parameters.
     pub(crate) fn new(x: f64, y: f64, density: f64, radius: f64, velocity: Point) -> Self {
         Planet {
+            id: Uuid::new_v4(),
             density: Cell::new(density),
             radius: Cell::new(radius),
             pos: Cell::new(Point { x, y }),
@@ -77,6 +80,7 @@ impl Planet {
         };
 
         Planet {
+            id: Uuid::new_v4(),
             density: Cell::new(density),
             radius: Cell::new(radius),
             pos: Cell::new(pos),
@@ -98,6 +102,7 @@ impl Planet {
         };
 
         Planet {
+            id: Uuid::new_v4(),
             density: Cell::new(density),
             radius: Cell::new(radius),
             pos: Cell::new(Point { x, y }),
@@ -185,6 +190,10 @@ impl Planet {
 impl super::quadnode::QuadNodeBody for Planet {
     fn center(&self) -> Point {
         self.pos.get()
+    }
+
+    fn id(&self) -> Uuid {
+        self.id
     }
 
     fn mass(&self) -> f64 {

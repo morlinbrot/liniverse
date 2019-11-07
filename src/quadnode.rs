@@ -1,14 +1,28 @@
 // Implementation following
 // http://arborjs.org/docs/barnes-hut
 use super::{
-    planet::Planet,
     point::Point,
     rect::{Cardinal, Rect},
 };
+use std::rc::Rc;
+use uuid::Uuid;
+
+pub trait QuadNodeBody {
+    fn center(&self) -> Point;
+    fn id(&self) -> Uuid;
+    fn mass(&self) -> f64;
+}
 
 pub struct Body {
     center: Point,
+    id: Uuid,
     mass: f64,
+}
+
+impl Body {
+    pub fn new(id: Uuid, center: Point, mass: f64) -> Self {
+        Self { center, id, mass }
+    }
 }
 
 impl QuadNodeBody for Body {
@@ -16,20 +30,19 @@ impl QuadNodeBody for Body {
         self.center
     }
 
+    fn id(&self) -> Uuid {
+        self.id
+    }
+
     fn mass(&self) -> f64 {
         self.mass
     }
 }
 
-pub trait QuadNodeBody {
-    fn center(&self) -> Point;
-    fn mass(&self) -> f64;
-}
-
 pub struct QuadNode<T> {
     capacity: usize,
     center_of_mass: Point,
-    bodies: Vec<T>,
+    bodies: Vec<Rc<T>>,
     mass: Option<f64>,
     nodes: Option<Box<[Self; 4]>>,
     rect: Rect,
@@ -48,7 +61,7 @@ impl<T: QuadNodeBody> QuadNode<T> {
         }
     }
 
-    pub fn insert(&mut self, body: T) -> Result<(), std::io::Error> {
+    pub fn insert(&mut self, body: Rc<T>) -> Result<(), std::io::Error> {
         if self.bodies.len() < self.capacity {
             self.bodies.push(body);
             return Ok(());
@@ -106,37 +119,30 @@ impl<T: QuadNodeBody> QuadNode<T> {
 mod test {
     use super::*;
 
-    fn setup() -> QuadNode<Body> {
+    fn setup() -> (QuadNode<Body>, Vec<Rc<Body>>) {
         let width = 100.00;
         let height = 100.0;
         let bounds = Rect::new(width / 2.0, height / 2.0, width, height);
-        QuadNode::new(1, bounds)
+        let bodies = vec![
+            Rc::new(Body::new(Uuid::new_v4(), Point::new(2.0, 2.0), 10.0)),
+            Rc::new(Body::new(Uuid::new_v4(), Point::new(3.0, 3.0), 10.0)),
+        ];
+
+        (QuadNode::new(1, bounds), bodies)
     }
 
     #[test]
     fn insert() {
-        let mut qnode = setup();
-        let b1 = Body {
-            center: Point::new(2.0, 2.0),
-            mass: 10.0,
-        };
-        qnode.insert(b1).unwrap();
+        let (mut qnode, bodies) = setup();
+        qnode.insert(bodies[0].clone()).unwrap();
         assert_eq!(qnode.bodies.len(), 1);
     }
 
     #[test]
     fn insert_and_subdivide() {
-        let mut qnode = setup();
-        let b1 = Body {
-            center: Point::new(2.0, 2.0),
-            mass: 10.0,
-        };
-        let b2 = Body {
-            center: Point::new(3.0, 3.0),
-            mass: 10.0,
-        };
-        qnode.insert(b1).unwrap();
-        qnode.insert(b2).unwrap();
+        let (mut qnode, bodies) = setup();
+        qnode.insert(bodies[0].clone()).unwrap();
+        qnode.insert(bodies[1].clone()).unwrap();
         assert_eq!(qnode.bodies.len(), 0);
         assert!(qnode.nodes.is_some());
     }
