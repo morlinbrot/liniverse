@@ -131,6 +131,14 @@ impl std::ops::Div<usize> for &Point {
     }
 }
 
+impl std::fmt::Display for Point {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        writeln!(f, "{:>13}", "POINT")?;
+        writeln!(f, "{:>12}: x: {}, y: {}", "Pos", self.x, self.y)?;
+        Ok(())
+    }
+}
+
 #[cfg(test)]
 mod test {
     use super::*;

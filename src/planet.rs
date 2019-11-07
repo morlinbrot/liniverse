@@ -231,6 +231,6 @@ mod test {
         assert_eq!(Point::new(14.0, 14.0), p1.pos());
 
         // Run `cargo test -- --nocapture` to see `println!` output.
-        println!("{}", p1);
+        //println!("{}", p1);
     }
 }

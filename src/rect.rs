@@ -9,6 +9,7 @@ pub enum Cardinal {
 }
 
 /// A struct representing a rectangular plane in a Cartesian coordinate system.
+/// X and y co-ordinates specify the *center* of the rectangle.
 #[derive(Debug, PartialEq)]
 pub struct Rect {
     x: f64,
@@ -18,7 +19,6 @@ pub struct Rect {
 }
 
 impl Rect {
-    /// X and y co-ordinates specify the *center* of the rectangle.
     pub fn new(x: f64, y: f64, width: f64, height: f64) -> Self {
         Self {
             x,
@@ -73,6 +73,16 @@ impl Rect {
 
     fn half_height(&self) -> f64 {
         self.height / 2.0
+    }
+}
+
+impl std::fmt::Display for Rect {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        writeln!(f, "{:>13}", "RECT")?;
+        writeln!(f, "{:>12}: x: {}, y: {}", "Center", self.x, self.y)?;
+        writeln!(f, "{:>12}: {}", "Width", self.width)?;
+        writeln!(f, "{:>12}: {}", "Height", self.height)?;
+        Ok(())
     }
 }
 
