@@ -15,14 +15,13 @@ use wasm_bindgen::JsCast;
 pub mod point;
 use point::Point;
 
-pub mod planet;
+mod planet;
 use planet::Planet;
 
 pub mod quadnode;
-use quadnode::QuadNode;
+pub use quadnode::{Body, Liniversable, QuadNode};
 
 pub mod rect;
-use rect::Rect;
 
 mod renderloop;
 use renderloop::RenderLoop;
