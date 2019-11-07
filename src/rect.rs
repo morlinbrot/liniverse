@@ -67,6 +67,14 @@ impl Rect {
         }
     }
 
+    pub fn width(&self) -> f64 {
+        self.width
+    }
+
+    pub fn height(&self) -> f64 {
+        self.height
+    }
+
     fn half_width(&self) -> f64 {
         self.width / 2.0
     }

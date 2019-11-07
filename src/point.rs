@@ -9,15 +9,24 @@ impl Point {
         Point { x, y }
     }
 
+    /// Return the magnitude of the vector.
     pub fn mag(&self) -> f64 {
         (self.x * self.x + self.y * self.y).sqrt()
     }
 
+    /// Return the normalised vector.
     pub fn norm(&self) -> Self {
         Point {
             x: self.x / self.mag(),
             y: self.y / self.mag(),
         }
+    }
+
+    /// Calculate the distance to another point.
+    pub fn distance_to(&self, other_p: Point) -> f64 {
+        let dx = (other_p.x - self.x).powf(2.0);
+        let dy = (other_p.y - self.y).powf(2.0);
+        (dx + dy).sqrt()
     }
 }
 
