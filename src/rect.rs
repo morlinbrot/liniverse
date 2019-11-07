@@ -8,7 +8,7 @@ pub enum Cardinal {
     SW,
 }
 
-/// A struct representing a rectangular plane in a cartesian coordinate system.
+/// A struct representing a rectangular plane in a Cartesian coordinate system.
 #[derive(Debug, PartialEq)]
 pub struct Rect {
     x: f64,
