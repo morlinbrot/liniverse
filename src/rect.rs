@@ -32,7 +32,7 @@ impl Rect {
         let nw = self.corner(Cardinal::NW);
         let se = self.corner(Cardinal::SE);
 
-        p.x > nw.x && p.x < se.x && p.y > nw.y && p.y < se.y
+        p.x > nw.x && p.x < se.x && p.y < nw.y && p.y > se.y
     }
 
     /// Return a [`Point`](../point/struct.Point.html) at the center of the rectangle.
@@ -92,8 +92,20 @@ mod test {
 
     #[test]
     fn basics() {
-        let a = Rect::new(1.0, 1.0, 10.0, 10.0);
-        let b = Rect::new(1.0, 1.0, 10.0, 10.0);
-        assert_eq!(a, b);
+        let a = Rect::new(5.0, 5.0, 10.0, 10.0);
+
+        let p1 = Point::new(1.0, 1.0);
+        let p2 = Point::new(11.0, 11.0);
+        assert_eq!(a.contains(&p1), true);
+        assert_eq!(a.contains(&p2), false);
+
+        let nw = Rect::new(2.5, 7.5, 5.0, 5.0);
+        let ne = Rect::new(7.5, 7.5, 5.0, 5.0);
+        let se = Rect::new(7.5, 2.5, 5.0, 5.0);
+        let sw = Rect::new(2.5, 2.5, 5.0, 5.0);
+        assert_eq!(a.split_rect(Cardinal::NW), nw);
+        assert_eq!(a.split_rect(Cardinal::NE), ne);
+        assert_eq!(a.split_rect(Cardinal::SE), se);
+        assert_eq!(a.split_rect(Cardinal::SW), sw);
     }
 }
