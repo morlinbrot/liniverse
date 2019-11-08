@@ -13,14 +13,14 @@ pub struct Universe {
 }
 
 impl Universe {
-    pub(crate) fn new(dimensions: (f64, f64)) -> Self {
+    pub fn new(dimensions: (f64, f64)) -> Self {
         Universe {
             dimensions,
             planets: RefCell::new(vec![]),
         }
     }
 
-    pub(crate) fn init_random(&mut self) {
+    pub fn init_random(&mut self) {
         //let mut rng = rand::thread_rng();
         self.planets.borrow_mut().push(Planet::new(
             self.dimensions.0 / 2.0,
@@ -48,11 +48,11 @@ impl Universe {
     }
 
     #[allow(dead_code)]
-    pub(crate) fn log(&self, val: &JsValue) {
+    pub fn log(&self, val: &JsValue) {
         web_sys::console::log_1(&val);
     }
 
-    pub(crate) fn add_planet(&mut self, x: f64, y: f64) {
+    pub fn add_planet(&mut self, x: f64, y: f64) {
         self.planets.borrow_mut().push(Planet::new_semi_rng(x, y));
     }
 
@@ -62,7 +62,7 @@ impl Universe {
     /// Since we're only holding references to our planets, when one gets eaten, we initially set
     /// it to `dead` and remove it from the `planets` vector after the loop is finished.
     #[allow(non_snake_case)]
-    pub(crate) fn tick<'a>(&self) {
+    pub fn tick<'a>(&self) {
         let G = 6.67 * 10_f64.powf(-11.0);
 
         // Some parameters to make the universe more enjoyable to look at.
@@ -129,7 +129,7 @@ impl Universe {
     }
 
     #[allow(non_snake_case)]
-    pub(crate) fn draw<'a>(&self, ctx: &'a Canvas) -> &'a Canvas {
+    pub fn draw<'a>(&self, ctx: &'a Canvas) -> &'a Canvas {
         ctx.clear_rect(0.0, 0.0, self.dimensions.0, self.dimensions.1);
         ctx.set_stroke_style(&"magenta".into());
         ctx.set_fill_style(&"black".into());

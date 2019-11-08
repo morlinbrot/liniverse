@@ -1,3 +1,4 @@
+/// A vector into 2-dimensional space.
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Point {
     pub x: f64,

@@ -1,4 +1,4 @@
-//! Provides some tools to simulate the gravitational forces between bodies in space.
+//! Simulation of a 2-dimensional galaxy of planets and the forces acting on them.
 //!
 //! We use [`wasm_bindgen`](https://github.com/rustwasm/wasm-bindgen) to access JavaScript events
 //! and use HTML elements like canvas.
@@ -7,27 +7,27 @@
 //! [`Universe`](./universe/struct.Universe.html), we compute the forces at play, update a [`Planet`](./planet/struct.Planet.html)'s
 //! position and [`draw`](./universe/struct.Universe.html#method.draw) everything out onto the canvas
 //! inside our [`RenderLoop`](./renderloop/struct.RenderLoop.html).
+//! 
+//! To be able to efficiently render a large amount of planets, we reduce computations by constructing a [`quad`](./quad/index.html)
+//! tree which will aggregate the gravitational forces of far away planets.
 use std::cell::RefCell;
 use std::rc::Rc;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 
-pub mod point;
-use point::Point;
-
 mod planet;
-use planet::Planet;
+pub use planet::Planet;
 
-pub mod quadnode;
-pub use quadnode::{Body, Liniversable, QuadNode};
-
-pub mod rect;
+pub mod geo;
+pub use geo::{Cardinal, Point, Rect};
+pub mod quad;
+pub use quad::{Body, Newtonian, QuadConfig, QuadNode};
 
 mod renderloop;
-use renderloop::RenderLoop;
+pub use renderloop::RenderLoop;
 
 mod universe;
-use universe::Universe;
+pub use universe::Universe;
 
 const NO_OF_PLANETS: usize = 100;
 

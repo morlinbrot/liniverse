@@ -1,17 +1,15 @@
 // Implementation following
 // http://arborjs.org/docs/barnes-hut
-use super::{
-    point::Point,
-    rect::{Cardinal, Rect},
-};
 use std::cell::RefCell;
 use std::rc::Rc;
 use uuid::Uuid;
 
+use super::*;
+
 /// The trait that any struct must implement to be inserted as a body into a
-/// [`QuadNode`](../quadnode/struct.QuadNode.html).
-pub trait Liniversable {
-    fn apply_force(&mut self, body: QuadNodeBody, delta_time: f64) -> Result<(), std::io::Error>;
+/// [`QuadNode`](./struct.QuadNode.html).
+pub trait Newtonian {
+    fn apply_force(&mut self, body: QuadBody, delta_time: f64) -> Result<(), std::io::Error>;
     fn center(&self) -> Point;
     fn id(&self) -> Uuid;
     fn mass(&self) -> f64;
@@ -19,82 +17,12 @@ pub trait Liniversable {
     fn update_position(&mut self, new_position: Point);
 }
 
-type QuadNodeBody = Rc<RefCell<dyn Liniversable>>;
+// Used for testing.
+// pub trait DisplayNewtonian: Newtonian + std::fmt::Display {}
+// impl DisplayNewtonian for Body {}
+// type QuadBody = Rc<RefCell<dyn DisplayNewtonian>>;
 
-/// An example struct implementing [`Liniversable`](./trait.Liniversable.html).
-pub struct Body {
-    center: Point,
-    id: Uuid,
-    mass: f64,
-    velocity: Point,
-}
-
-impl Body {
-    pub fn new(id: Uuid, center: Point, mass: f64) -> Self {
-        Self {
-            center,
-            id,
-            mass,
-            velocity: Point::new(0.0, 0.0),
-        }
-    }
-}
-
-impl Liniversable for Body {
-    #[allow(non_snake_case)]
-    fn apply_force(&mut self, body: QuadNodeBody, delta_time: f64) -> Result<(), std::io::Error> {
-        let G = 6.67 * 10_f64.powf(-11.0);
-
-        // TODO: Get time right.
-        let dt = delta_time;
-
-        let body = body.borrow();
-
-        // Distance r between the two bodies.
-        let dx = (body.center().x - self.center().x).powf(2.0);
-        let dy = (body.center().y - self.center().y).powf(2.0);
-        let r = (dx + dy).sqrt();
-
-        // Net force being exerted on the body.
-        let F = (G * self.mass() * body.mass()) / r.powf(2.0);
-        let Fx = F * dx / r;
-        let Fy = F * dy / r;
-
-        // Compute acceleration.
-        let ax = Fx / self.mass();
-        let ay = Fy / self.mass();
-
-        let vx = self.velocity().x + dt * ax;
-        let vy = self.velocity().y + dt * ay;
-
-        // Compute new position.
-        let px = self.center().x + dt * vx;
-        let py = self.center().y + dt * vy;
-
-        self.center = Point { x: px, y: py };
-        Ok(())
-    }
-
-    fn center(&self) -> Point {
-        self.center
-    }
-
-    fn id(&self) -> Uuid {
-        self.id
-    }
-
-    fn mass(&self) -> f64 {
-        self.mass
-    }
-
-    fn update_position(&mut self, new_position: Point) {
-        self.center = new_position;
-    }
-
-    fn velocity(&self) -> Point {
-        self.velocity
-    }
-}
+pub type QuadBody = Rc<RefCell<dyn Newtonian>>;
 
 /// Shared config that applies to all nodes in the tree.
 pub struct QuadConfig {
@@ -105,11 +33,11 @@ pub struct QuadConfig {
 /// Used to construct a quad tree. Ether holds a vector of bodies up until its capacity or aggregates the mass and
 /// center of mass of all the bodies that may be held by nodes further down the tree.
 ///
-/// Any struct implementing [`Liniversable`](../quadnode/trait.Liniversable.html) may be inserted
+/// Any struct implementing [`Newtonian`](./trait.Newtonian.html) may be inserted
 /// into the tree. When passed to [`apply_forces`](./struct.QuadNode.html#method.apply_forces),
 /// gravitational forces of all the bodies in the tree will be applied.
 ///
-/// The [`QuadConfig`](../quadnode/struct.QuadConfig.html)'s `theta` value sets the threshhold at which
+/// The [`QuadConfig`](./struct.QuadConfig.html)'s `theta` value sets the threshhold at which
 /// a node's aggregated values will be applied instead of an individual body's ones.
 pub struct QuadNode {
     /// Config shared across nodes.
@@ -117,7 +45,7 @@ pub struct QuadNode {
     /// The center of mass of the node, aggregated across all contained bodies.
     com: Point,
     /// All the bodies currently held by the node. Empty if node is internal.
-    bodies: Vec<QuadNodeBody>,
+    bodies: Vec<QuadBody>,
     /// Aggregated mass of all contained bodies.
     mass: Option<f64>,
     /// An array of four sub-nodes, splitting this node into its quadrants. `None` if node is
@@ -140,7 +68,7 @@ impl QuadNode {
         }
     }
 
-    pub fn insert(&mut self, body: QuadNodeBody) -> Result<(), std::io::Error> {
+    pub fn insert(&mut self, body: QuadBody) -> Result<(), std::io::Error> {
         self.aggregate(body.clone());
 
         if self.bodies.len() < self.cfg.capacity {
@@ -169,7 +97,7 @@ impl QuadNode {
 
     // Calculations based on
     // https://www.cs.princeton.edu/courses/archive/fall03/cs126/assignments/nbody.html
-    pub fn apply_forces(&self, target_body: QuadNodeBody) -> Result<(), std::io::Error> {
+    pub fn apply_forces(&self, target_body: QuadBody) -> Result<(), std::io::Error> {
         let time = 0.5;
         match &self.nodes {
             // Otherwise.
@@ -215,7 +143,7 @@ impl QuadNode {
         ]));
     }
 
-    fn aggregate(&mut self, body: QuadNodeBody) {
+    fn aggregate(&mut self, body: QuadBody) {
         let body = body.borrow();
         let (new_mass, new_x, new_y) = match self.mass {
             Some(mass) => {
@@ -311,7 +239,10 @@ mod test {
 
         qnode.apply_forces(b1.clone()).unwrap();
 
-        println!("b1: {}", b1.borrow().center());
-        println!("b2: {}", b2.borrow().center());
+        // let nodes = qnode.nodes.unwrap();
+        // let x = nodes[0].bodies[0].borrow();
+        // println!("nw: {}", x);
+        // println!("b1: {}", b1.borrow().center());
+        // println!("b2: {}", b2.borrow().center());
     }
 }
