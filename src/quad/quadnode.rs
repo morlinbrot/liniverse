@@ -9,12 +9,12 @@ use super::*;
 /// The trait that any struct must implement to be inserted as a body into a
 /// [`QuadNode`](./struct.QuadNode.html).
 pub trait Newtonian {
-    fn apply_force(&mut self, body: QuadBody, delta_time: f64) -> Result<(), std::io::Error>;
-    fn center(&self) -> Point;
     fn id(&self) -> Uuid;
     fn mass(&self) -> f64;
+    fn position(&self) -> Point;
     fn velocity(&self) -> Point;
-    fn update_position(&mut self, new_position: Point);
+    fn set_position(&mut self, new_position: Point);
+    fn set_velocity(&mut self, new_velocity: Point);
 }
 
 // Used for testing.
@@ -85,7 +85,7 @@ impl QuadNode {
 
         for body in bodies {
             for node in self.nodes.as_mut().unwrap().iter_mut() {
-                if node.rect.contains(&body.borrow().center()) {
+                if node.rect.contains(&body.borrow().position()) {
                     node.insert(body)?;
                     break;
                 }
@@ -95,37 +95,68 @@ impl QuadNode {
         Ok(())
     }
 
+    #[allow(non_snake_case)]
+    fn calculate_f(a: QuadBody, b: QuadBody, delta: f64) -> Result<(), std::io::Error> {
+        let mut a = a.borrow_mut();
+        let b = b.borrow();
+
+        let G = 6.67 * 10_f64.powf(-11.0);
+
+        // Distance r between the two bodies.
+        let dx = (b.position().x - a.position().x).powf(2.0);
+        let dy = (b.position().y - a.position().y).powf(2.0);
+        let r = (dx + dy).sqrt();
+
+        // Net force being exerted on the body.
+        let F = (G * a.mass() * b.mass()) / r.powf(2.0);
+        let Fx = F * dx / r;
+        let Fy = F * dy / r;
+
+        // Compute acceleration.
+        let ax = Fx / a.mass();
+        let ay = Fy / a.mass();
+
+        let vx = a.velocity().x + delta * ax;
+        let vy = a.velocity().y + delta * ay;
+
+        // Compute new position.
+        let px = a.position().x + delta * vx;
+        let py = a.position().y + delta * vy;
+
+        a.set_position(Point { x: px, y: py });
+        Ok(())
+    }
+
     // Calculations based on
     // https://www.cs.princeton.edu/courses/archive/fall03/cs126/assignments/nbody.html
-    pub fn apply_forces(&self, target_body: QuadBody) -> Result<(), std::io::Error> {
-        let time = 0.5;
+    pub fn apply_forces(&self, target_body: QuadBody, delta: f64) -> Result<(), std::io::Error> {
         match &self.nodes {
             // Otherwise.
             Some(nodes) => {
                 let s = (self.rect.width() + self.rect.height()) / 2.0;
-                let d = self.com.distance_to(target_body.borrow().center());
+                let d = self.com.distance_to(target_body.borrow().position());
                 let ratio = s / d;
 
                 // We are far away from the body and simply apply the aggregated values.
                 if self.cfg.theta < ratio {
-                    let self_as_body = Rc::new(RefCell::new(Body::new(
+                    let aggregation = Rc::new(RefCell::new(Body::new(
                         Uuid::new_v4(),
                         self.com,
                         self.mass.unwrap(),
                     )));
-                    target_body.borrow_mut().apply_force(self_as_body, time)?;
+                    QuadNode::calculate_f(target_body.clone(), aggregation.clone(), delta)?;
                 }
 
                 // We keep going recursively.
                 for node in nodes.iter() {
-                    node.apply_forces(target_body.clone())?;
+                    node.apply_forces(target_body.clone(), delta)?;
                 }
             }
             // External node.
             None => {
                 for body in &self.bodies {
                     if target_body.borrow().id() != body.borrow().id() {
-                        target_body.borrow_mut().apply_force(body.clone(), time)?;
+                        QuadNode::calculate_f(target_body.clone(), body.clone(), delta)?;
                     }
                 }
             }
@@ -150,11 +181,11 @@ impl QuadNode {
                 let new_mass = mass + body.mass();
                 (
                     new_mass,
-                    (self.com.x * mass + body.center().x * body.mass()) / new_mass,
-                    (self.com.y * mass + body.center().y * body.mass()) / new_mass,
+                    (self.com.x * mass + body.position().x * body.mass()) / new_mass,
+                    (self.com.y * mass + body.position().y * body.mass()) / new_mass,
                 )
             }
-            None => (body.mass(), body.center().x, body.center().y),
+            None => (body.mass(), body.position().x, body.position().y),
         };
 
         self.mass = Some(new_mass);
@@ -176,73 +207,58 @@ mod test {
             capacity: 1,
             theta: 0.5,
         });
-        let bodies = vec![
-            Rc::new(RefCell::new(Body::new(
-                Uuid::new_v4(),
-                // Spawn in NW quadrant.
-                Point::new(4.0, 6.0),
-                10.0,
-            ))),
-            Rc::new(RefCell::new(Body::new(
-                Uuid::new_v4(),
-                // Spawn in NE quadrant.
-                Point::new(6.0, 6.0),
-                10.0,
-            ))),
-            Rc::new(RefCell::new(Body::new(
-                Uuid::new_v4(),
-                // Spawn another point in NE quadrant.
-                Point::new(7.0, 7.0),
-                10.0,
-            ))),
-            Rc::new(RefCell::new(Body::new(
-                Uuid::new_v4(),
-                // Spawn in SW quadrant.
-                Point::new(4.0, 4.0),
-                10.0,
-            ))),
+
+        let mut bodies = vec![];
+        let mass = 1.0 * 10_f64.powf(6.0);
+        let positions = vec![
+            Point::new(4.0, 6.0),
+            Point::new(6.0, 6.0),
+            Point::new(7.0, 7.0),
+            Point::new(4.0, 4.0),
         ];
+        for pos in positions {
+            let id = Uuid::new_v4();
+            bodies.push(Rc::new(RefCell::new(Body::new(id, pos, mass))));
+        }
 
         (QuadNode::new(cfg, bounds), bodies)
     }
 
     #[test]
-    fn insert() {
+    fn insert_and_aggregate() {
         let (mut qnode, bodies) = setup();
-        qnode.insert(bodies[0].clone()).unwrap();
+        let b1 = &bodies[0];
+        qnode.insert(b1.clone()).unwrap();
         assert_eq!(qnode.bodies.len(), 1);
-        assert_eq!(qnode.mass, Some(10.0));
+        // Node should have agg. mass of the inserted body.
+        assert_eq!(qnode.mass, Some(b1.borrow().mass()));
     }
 
     #[test]
     fn insert_and_subdivide() {
         let (mut qnode, bodies) = setup();
-        qnode.insert(bodies[0].clone()).unwrap();
-        qnode.insert(bodies[1].clone()).unwrap();
+        let b1 = &bodies[0];
+        let b2 = &bodies[1];
+        qnode.insert(b1.clone()).unwrap();
+        qnode.insert(b2.clone()).unwrap();
         assert_eq!(qnode.bodies.len(), 0);
-        assert_eq!(qnode.mass, Some(20.0));
+        // Node should have agg. mass of two inserted bodies.
+        let agg_m = b1.borrow().mass() + b2.borrow().mass();
+        assert_eq!(qnode.mass, Some(agg_m));
         assert!(qnode.nodes.is_some());
     }
 
     #[test]
     fn update_forces() {
-        // TODO: Not yet working!
+        // TODO: Test calculate_f with actual values.
         let (mut qnode, bodies) = setup();
-        let b1 = &bodies[0];
-        let b2 = &bodies[1];
-        let b3 = &bodies[2];
-        let b4 = &bodies[3];
-        qnode.insert(b1.clone()).unwrap();
-        qnode.insert(b2.clone()).unwrap();
-        qnode.insert(b3.clone()).unwrap();
-        qnode.insert(b4.clone()).unwrap();
+        for b in &bodies {
+            qnode.insert(b.clone()).unwrap();
+        }
 
-        qnode.apply_forces(b1.clone()).unwrap();
-
-        // let nodes = qnode.nodes.unwrap();
-        // let x = nodes[0].bodies[0].borrow();
-        // println!("nw: {}", x);
-        // println!("b1: {}", b1.borrow().center());
-        // println!("b2: {}", b2.borrow().center());
+        for b in &bodies {
+            qnode.apply_forces(b.clone(), 1.0).unwrap();
+            println!("{}", b.borrow().position());
+        }
     }
 }
