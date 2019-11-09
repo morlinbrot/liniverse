@@ -1,5 +1,6 @@
 // Implementation following
-// http://arborjs.org/docs/barnes-hut
+// http://arborjs.org/docs/barnes-hut and
+// https://www.cs.princeton.edu/courses/archive/fall03/cs126/assignments/nbody.html
 use std::cell::RefCell;
 use std::rc::Rc;
 use uuid::Uuid;
@@ -34,7 +35,7 @@ pub struct QuadConfig {
 /// center of mass of all the bodies that may be held by nodes further down the tree.
 ///
 /// Any struct implementing [`Newtonian`](./trait.Newtonian.html) may be inserted
-/// into the tree. When passed to [`apply_forces`](./struct.QuadNode.html#method.apply_forces),
+/// into the tree. When passed to [`update_body`](./struct.QuadNode.html#method.update_body),
 /// gravitational forces of all the bodies in the tree will be applied.
 ///
 /// The [`QuadConfig`](./struct.QuadConfig.html)'s `theta` value sets the threshhold at which
@@ -71,18 +72,24 @@ impl QuadNode {
     pub fn insert(&mut self, body: QuadBody) -> Result<(), std::io::Error> {
         self.aggregate(body.clone());
 
-        if self.bodies.len() < self.cfg.capacity {
+        // If we're still an external node and we're not at capacity yet, we insert and return.
+        if self.nodes.is_none() && self.bodies.len() < self.cfg.capacity {
             self.bodies.push(body);
             return Ok(());
         }
 
+        // Capacity has been reached but we don't have sub-nodes yet.
         if self.nodes.is_none() {
             self.subdivide();
         }
 
+        // We're at capacity and have sub-nodes.
+        // On reaching capacity for the first time, we need to make sure to pass on any already
+        // contained bodies.
         let mut bodies = vec![body];
         bodies.append(&mut self.bodies);
 
+        // All bodies are then recursively passed on to our sub-nodes.
         for body in bodies {
             for node in self.nodes.as_mut().unwrap().iter_mut() {
                 if node.rect.contains(&body.borrow().position()) {
@@ -95,43 +102,10 @@ impl QuadNode {
         Ok(())
     }
 
-    #[allow(non_snake_case)]
-    fn calculate_f(a: QuadBody, b: QuadBody, delta: f64) -> Result<(), std::io::Error> {
-        let mut a = a.borrow_mut();
-        let b = b.borrow();
-
-        let G = 6.67 * 10_f64.powf(-11.0);
-
-        // Distance r between the two bodies.
-        let dx = (b.position().x - a.position().x).powf(2.0);
-        let dy = (b.position().y - a.position().y).powf(2.0);
-        let r = (dx + dy).sqrt();
-
-        // Net force being exerted on the body.
-        let F = (G * a.mass() * b.mass()) / r.powf(2.0);
-        let Fx = F * dx / r;
-        let Fy = F * dy / r;
-
-        // Compute acceleration.
-        let ax = Fx / a.mass();
-        let ay = Fy / a.mass();
-
-        let vx = a.velocity().x + delta * ax;
-        let vy = a.velocity().y + delta * ay;
-
-        // Compute new position.
-        let px = a.position().x + delta * vx;
-        let py = a.position().y + delta * vy;
-
-        a.set_position(Point { x: px, y: py });
-        Ok(())
-    }
-
-    // Calculations based on
-    // https://www.cs.princeton.edu/courses/archive/fall03/cs126/assignments/nbody.html
-    pub fn apply_forces(&self, target_body: QuadBody, delta: f64) -> Result<(), std::io::Error> {
+    pub fn update_body(&self, target_body: QuadBody, delta: f64) -> Result<(), std::io::Error> {
+        let mut velocities = vec![];
         match &self.nodes {
-            // Otherwise.
+            // Internal node.
             Some(nodes) => {
                 let s = (self.rect.width() + self.rect.height()) / 2.0;
                 let d = self.com.distance_to(target_body.borrow().position());
@@ -144,25 +118,78 @@ impl QuadNode {
                         self.com,
                         self.mass.unwrap(),
                     )));
-                    QuadNode::calculate_f(target_body.clone(), aggregation.clone(), delta)?;
+                    let f = QuadNode::calc_force(target_body.clone(), aggregation.clone());
+                    let v = QuadNode::calc_velocity(target_body.clone(), f, delta);
+                    velocities.push(v);
                 }
 
                 // We keep going recursively.
                 for node in nodes.iter() {
-                    node.apply_forces(target_body.clone(), delta)?;
+                    node.update_body(target_body.clone(), delta)?;
                 }
             }
             // External node.
             None => {
                 for body in &self.bodies {
                     if target_body.borrow().id() != body.borrow().id() {
-                        QuadNode::calculate_f(target_body.clone(), body.clone(), delta)?;
+                        let f = QuadNode::calc_force(target_body.clone(), body.clone());
+                        let v = QuadNode::calc_velocity(target_body.clone(), f, delta);
+                        velocities.push(v);
                     }
                 }
             }
         }
 
+        let mut net_v = Point { x: 0.0, y: 0.0 };
+        net_v = velocities.into_iter().fold(net_v, |acc, curr| acc + curr);
+        // Update velocity to be able to use it in the next tick.
+        target_body.borrow_mut().set_velocity(net_v);
+
+        // Apply net velocity to compute new position.
+        let new_position = Point::new(
+            target_body.borrow().position().x + delta * net_v.x,
+            target_body.borrow().position().y + delta * net_v.y,
+        );
+
+        // Update new position.
+        target_body.borrow_mut().set_position(new_position);
+
         Ok(())
+    }
+
+    #[allow(non_snake_case)]
+    fn calc_force(a: QuadBody, b: QuadBody) -> Point {
+        let a = a.borrow();
+        let b = b.borrow();
+
+        let G = 6.6726 * 10_f64.powf(-11.0);
+
+        // Distance r between the two bodies.
+        let dx = b.position().x - a.position().x;
+        let dy = b.position().y - a.position().y;
+        let r = (dx.powf(2.0) + dy.powf(2.0)).sqrt();
+
+        // Net force being exerted onto the body.
+        let F = (G * a.mass() * b.mass()) / r.powf(2.0);
+        let Fx = F * (dx / r);
+        let Fy = F * (dy / r);
+
+        Point { x: Fx, y: Fy }
+    }
+
+    #[allow(non_snake_case)]
+    fn calc_velocity(a: QuadBody, F: Point, delta: f64) -> Point {
+        let a = a.borrow();
+
+        // Compute acceleration at time t.
+        let ax = F.x / a.mass();
+        let ay = F.y / a.mass();
+
+        // Compute velocity at time dt / 2.
+        let vx = a.velocity().x + delta * ax;
+        let vy = a.velocity().y + delta * ay;
+
+        Point { x: vx, y: vy }
     }
 
     fn subdivide(&mut self) {
@@ -209,11 +236,11 @@ mod test {
         });
 
         let mut bodies = vec![];
-        let mass = 1.0 * 10_f64.powf(6.0);
+        let mass = 100.0;
         let positions = vec![
             Point::new(4.0, 6.0),
             Point::new(6.0, 6.0),
-            Point::new(7.0, 7.0),
+            Point::new(8.0, 8.0),
             Point::new(4.0, 4.0),
         ];
         for pos in positions {
@@ -225,40 +252,85 @@ mod test {
     }
 
     #[test]
-    fn insert_and_aggregate() {
-        let (mut qnode, bodies) = setup();
-        let b1 = &bodies[0];
-        qnode.insert(b1.clone()).unwrap();
-        assert_eq!(qnode.bodies.len(), 1);
-        // Node should have agg. mass of the inserted body.
-        assert_eq!(qnode.mass, Some(b1.borrow().mass()));
-    }
-
-    #[test]
-    fn insert_and_subdivide() {
+    fn subdivide_and_aggregate() {
         let (mut qnode, bodies) = setup();
         let b1 = &bodies[0];
         let b2 = &bodies[1];
+        let b3 = &bodies[2];
+
         qnode.insert(b1.clone()).unwrap();
+        // Node should be external and have agg. mass of the inserted body.
+        assert_eq!(qnode.bodies.len(), 1);
+        assert_eq!(qnode.mass, Some(b1.borrow().mass()));
+
         qnode.insert(b2.clone()).unwrap();
-        assert_eq!(qnode.bodies.len(), 0);
-        // Node should have agg. mass of two inserted bodies.
+        // Node should have subdivide (be internal) and have agg. mass of both bodies.
         let agg_m = b1.borrow().mass() + b2.borrow().mass();
+        assert_eq!(qnode.bodies.len(), 0);
         assert_eq!(qnode.mass, Some(agg_m));
         assert!(qnode.nodes.is_some());
+
+        qnode.insert(b3.clone()).unwrap();
+        // NE quadrant should have further subdivided.
+        let nodes = qnode.nodes.unwrap();
+        let l1_ne = &nodes[1];
+        assert_eq!(l1_ne.bodies.len(), 0);
+        assert_eq!(l1_ne.nodes.is_some(), true);
+
+        // b2 & b3 should have been moved to NE and SW quadrants respectively.
+        let l2_ne = &l1_ne.nodes.as_ref().unwrap()[1];
+        let l2_sw = &l1_ne.nodes.as_ref().unwrap()[3];
+        assert_eq!(l2_ne.bodies.len(), 1);
+        assert_eq!(l2_sw.bodies.len(), 1);
     }
 
     #[test]
-    fn update_forces() {
-        // TODO: Test calculate_f with actual values.
+    fn rule_of_laws() {
+        // Newton's first law states that:
+        // F = Gm₁m₂ / r²
+        // Let's say we have two bodies with a mass of 100kg, 1m apart from each other.
+        // Following the above formula, we expect a force of 0.00000066726N to be exerted on b1.
+        let res_f = (6.6726 * 10_f64.powf(-11.0) * 100.0 * 100.0) / 1.0;
+
+        let delta = 1.0;
+        let mass = 100.0;
+        let positions = vec![Point::new(1.0, 1.0), Point::new(1.0, 2.0)];
+        let mut bodies = vec![];
+        for pos in positions {
+            let id = Uuid::new_v4();
+            bodies.push(Rc::new(RefCell::new(Body::new(id, pos, mass))));
+        }
+        let b1 = &bodies[0];
+        let b2 = &bodies[1];
+
+        let f = QuadNode::calc_force(b1.clone(), b2.clone());
+        // It's only exerted on y since both bodies are on the same x plane.
+        assert_eq!(f.y, res_f);
+
+        // With Newton's second law stating that:
+        // a = F / m
+        // the velocity v₁ of our body at time t₁ can be calculated as
+        // v₁ = v₀ + a * dt
+        // Since in our example, v₀ = 0 and dt = t₁ - t₀ = 1, we expect
+        let res_v = 0.0 + f.y / mass * delta;
+        let v = QuadNode::calc_velocity(b1.clone(), f, delta);
+        assert_eq!(v.y, res_v);
+    }
+
+    #[test]
+    fn update_body() {
         let (mut qnode, bodies) = setup();
         for b in &bodies {
             qnode.insert(b.clone()).unwrap();
         }
 
-        for b in &bodies {
-            qnode.apply_forces(b.clone(), 1.0).unwrap();
-            println!("{}", b.borrow().position());
+        for body in &bodies {
+            qnode.update_body(body.clone(), 1.0).unwrap();
+            // Use `cargo test -- --nocapture` to see the output.
+            println!("{}", body.borrow());
         }
+
+        let res_p1 = Point::new(4.000000015094995, 5.999999998903067);
+        assert_eq!(bodies[0].borrow().position(), res_p1);
     }
 }

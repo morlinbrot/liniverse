@@ -49,11 +49,13 @@ impl Newtonian for Body {
 
 impl std::fmt::Display for Body {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        let p = self.position();
+        let v = self.velocity();
         writeln!(f, "{:>13}", "BODY")?;
-        let x = self.position().x;
-        let y = self.position().y;
-        writeln!(f, "{:>12}: x: {}, y: {}", "Pos", x, y)?;
+        writeln!(f, "{:>12}: {}", "Id", self.id())?;
         writeln!(f, "{:>12}: {}", "Mass", self.mass())?;
+        writeln!(f, "{:>12}: x: {}, y: {}", "Pos", p.x, p.y)?;
+        writeln!(f, "{:>12}: x: {}, y: {}", "Velocity", v.x, v.y)?;
         Ok(())
     }
 }
