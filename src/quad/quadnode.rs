@@ -69,6 +69,7 @@ impl QuadNode {
         }
     }
 
+    /// Insert a [`Newtonian`](./trait.Newtonian.html) body into the tree.
     pub fn insert(&mut self, body: QuadBody) -> Result<(), std::io::Error> {
         self.aggregate(body.clone());
 
@@ -102,6 +103,8 @@ impl QuadNode {
         Ok(())
     }
 
+    /// Update a [`Newtonian`](./trait.Newtonian.html) body with the net graviational force being exerted on
+    /// it by calling [`set_velocity`](./struct.Body.html#method.set_velocity) and [`set_position`](./struct.Body.html#method.set_position) with the updated values.
     pub fn update_body(&self, target_body: QuadBody, delta: f64) -> Result<(), std::io::Error> {
         let mut velocities = vec![];
         match &self.nodes {
