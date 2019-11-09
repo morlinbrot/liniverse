@@ -53,6 +53,15 @@ impl std::ops::Add<&Point> for &Point {
     }
 }
 
+impl std::ops::AddAssign for Point {
+    fn add_assign(&mut self, other: Self) {
+        *self = Self {
+            x: self.x + other.x,
+            y: self.y + other.y,
+        };
+    }
+}
+
 impl std::ops::Sub for Point {
     type Output = Point;
 
@@ -72,6 +81,15 @@ impl std::ops::Sub<&Point> for &Point {
             x: self.x - other.x,
             y: self.y - other.y,
         }
+    }
+}
+
+impl std::ops::SubAssign for Point {
+    fn sub_assign(&mut self, other: Self) {
+        *self = Self {
+            x: self.x - other.x,
+            y: self.y - other.y,
+        };
     }
 }
 

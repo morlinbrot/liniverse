@@ -7,7 +7,7 @@
 //! [`Universe`](./universe/struct.Universe.html), we compute the forces at play, update a [`Planet`](./planet/struct.Planet.html)'s
 //! position and [`draw`](./universe/struct.Universe.html#method.draw) everything out onto the canvas
 //! inside our [`RenderLoop`](./renderloop/struct.RenderLoop.html).
-//! 
+//!
 //! To be able to efficiently render a large amount of planets, we reduce computations by constructing a [`quad`](./quad/index.html)
 //! tree which will aggregate the gravitational forces of far away planets.
 use std::cell::RefCell;
@@ -25,6 +25,9 @@ pub use quad::{Body, Newtonian, QuadConfig, QuadNode};
 
 mod renderloop;
 pub use renderloop::RenderLoop;
+
+mod timer;
+pub use timer::Timer;
 
 mod universe;
 pub use universe::Universe;

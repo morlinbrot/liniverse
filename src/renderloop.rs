@@ -9,6 +9,7 @@ pub struct RenderLoop {
     pub closure: Option<Closure<dyn Fn()>>,
     animation_id: Option<i32>,
     context: web_sys::CanvasRenderingContext2d,
+    fps: Vec<f64>,
     play_pause_btn: web_sys::HtmlElement,
     prev_timestamp: f64,
     universe: Rc<RefCell<Universe>>,
@@ -24,25 +25,41 @@ impl RenderLoop {
         context: web_sys::CanvasRenderingContext2d,
     ) -> Self {
         Self {
-            universe,
-            window,
-            play_pause_btn,
-            prev_timestamp: 0.0,
             animation_id: None,
             closure: None,
             context,
+            fps: Vec::new(),
+            play_pause_btn,
+            prev_timestamp: 0.0,
+            universe,
+            window,
         }
     }
 }
 
 impl RenderLoop {
     pub fn render_loop(&mut self) {
-        let perf = self.window.performance().expect("performance should be available");
-        let now = perf.now() / 1000.0;
+        let perf = self
+            .window
+            .performance()
+            .expect("performance should be available");
+
+        //let _timer = Timer::new("Universe::tick");
+
+        let now = perf.now();
         let delta = now - self.prev_timestamp;
         self.prev_timestamp = now;
 
-        self.universe.borrow().tick_n_draw(&self.context, delta);
+        //let fps = 1.0 / delta * 1000.0;
+        //self.fps.push(fps);
+        //if self.fps.len() > 100 {
+        //    self.fps.remove(0);
+        //}
+        //let mean = self.fps.iter().fold(0.0, |acc, curr| acc + curr);
+
+        self.universe
+            .borrow()
+            .tick_n_draw(&self.context, delta / 10.0);
 
         self.animation_id = if let Some(ref closure) = self.closure {
             Some(
