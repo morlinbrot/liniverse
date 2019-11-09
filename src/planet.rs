@@ -75,8 +75,8 @@ impl Planet {
         };
 
         let velocity = Point {
-            x: rng.gen_range(-0.2, 1.5),
-            y: rng.gen_range(-0.2, 1.5),
+            x: rng.gen_range(-2.0, 2.0),
+            y: rng.gen_range(-2.0, 2.0),
         };
 
         Planet {
@@ -184,6 +184,32 @@ impl Planet {
 
     fn volume(&self) -> f64 {
         4.0 / 3.0 * PI * (self.radius() as f64).powf(3.0)
+    }
+}
+
+impl Newtonian for Planet {
+    fn id(&self) -> Uuid {
+        self.id
+    }
+
+    fn mass(&self) -> f64 {
+        self.mass()
+    }
+
+    fn position(&self) -> Point {
+        self.pos.get()
+    }
+
+    fn velocity(&self) -> Point {
+        self.velocity.get()
+    }
+
+    fn set_position(&mut self, new_p: Point) {
+        self.pos.set(new_p);
+    }
+
+    fn set_velocity(&mut self, new_v: Point) {
+        self.velocity.set(new_v);
     }
 }
 

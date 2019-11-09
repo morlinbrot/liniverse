@@ -31,6 +31,18 @@ pub use universe::Universe;
 
 const NO_OF_PLANETS: usize = 100;
 
+#[wasm_bindgen]
+extern "C" {
+    #[wasm_bindgen(js_namespace = console)]
+    fn log(a: &str);
+}
+
+#[allow(unused_macros)]
+#[macro_export]
+macro_rules! console_log {
+    ($($t:tt)*) => (log(&format_args!($($t)*).to_string()))
+}
+
 fn get_dimensions(canvas: &web_sys::HtmlCanvasElement) -> (f64, f64) {
     let bounding_rect = (canvas.as_ref() as &web_sys::Element).get_bounding_client_rect();
     (bounding_rect.width(), bounding_rect.height())

@@ -3,16 +3,16 @@ use std::rc::Rc;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 
-use super::Universe;
+use super::*;
 
 pub struct RenderLoop {
+    pub closure: Option<Closure<dyn Fn()>>,
     animation_id: Option<i32>,
+    context: web_sys::CanvasRenderingContext2d,
+    play_pause_btn: web_sys::HtmlElement,
+    prev_timestamp: f64,
     universe: Rc<RefCell<Universe>>,
     window: web_sys::Window,
-    play_pause_btn: web_sys::HtmlElement,
-    pub closure: Option<Closure<dyn Fn()>>,
-
-    context: web_sys::CanvasRenderingContext2d,
 }
 
 impl RenderLoop {
@@ -23,13 +23,13 @@ impl RenderLoop {
 
         context: web_sys::CanvasRenderingContext2d,
     ) -> Self {
-        RenderLoop {
+        Self {
             universe,
             window,
             play_pause_btn,
+            prev_timestamp: 0.0,
             animation_id: None,
             closure: None,
-
             context,
         }
     }
@@ -37,10 +37,12 @@ impl RenderLoop {
 
 impl RenderLoop {
     pub fn render_loop(&mut self) {
-        self.universe.borrow().tick();
+        let perf = self.window.performance().expect("performance should be available");
+        let now = perf.now() / 1000.0;
+        let delta = now - self.prev_timestamp;
+        self.prev_timestamp = now;
 
-        // TODO: Move this to a `Renderer` struct.
-        self.universe.borrow().draw(&self.context);
+        self.universe.borrow().tick_n_draw(&self.context, delta);
 
         self.animation_id = if let Some(ref closure) = self.closure {
             Some(

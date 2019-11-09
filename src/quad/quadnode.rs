@@ -27,8 +27,8 @@ pub type QuadBody = Rc<RefCell<dyn Newtonian>>;
 
 /// Shared config that applies to all nodes in the tree.
 pub struct QuadConfig {
-    capacity: usize,
-    theta: f64,
+    pub capacity: usize,
+    pub theta: f64,
 }
 
 /// Used to construct a quad tree. Ether holds a vector of bodies up until its capacity or aggregates the mass and
