@@ -50,16 +50,16 @@ impl RenderLoop {
         let delta = now - self.prev_timestamp;
         self.prev_timestamp = now;
 
-        //let fps = 1.0 / delta * 1000.0;
-        //self.fps.push(fps);
-        //if self.fps.len() > 100 {
-        //    self.fps.remove(0);
-        //}
+        let fps = 1.0 / delta * 1000.0;
+        self.fps.push(fps);
+        if self.fps.len() > 100 {
+            self.fps.remove(0);
+        }
         //let mean = self.fps.iter().fold(0.0, |acc, curr| acc + curr);
 
         self.universe
             .borrow()
-            .tick_n_draw(&self.context, delta / 10.0);
+            .tick_n_draw(&self.context, delta / 50.0);
 
         self.animation_id = if let Some(ref closure) = self.closure {
             Some(

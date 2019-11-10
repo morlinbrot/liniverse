@@ -26,13 +26,13 @@ pub use quad::{Body, Newtonian, QuadConfig, QuadNode};
 mod renderloop;
 pub use renderloop::RenderLoop;
 
-mod timer;
-pub use timer::Timer;
+//mod timer;
+//pub use timer::Timer;
 
 mod universe;
 pub use universe::Universe;
 
-const NO_OF_PLANETS: usize = 100;
+const NO_OF_PLANETS: usize = 5000;
 
 #[wasm_bindgen]
 extern "C" {
