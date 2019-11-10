@@ -15,9 +15,6 @@ use renderloop::RenderLoop;
 mod universe;
 use universe::Universe;
 
-mod rect;
-use rect::QuadNode;
-
 const NO_OF_PLANETS: usize = 100;
 
 fn get_dimensions(canvas: &web_sys::HtmlCanvasElement) -> (f64, f64) {
