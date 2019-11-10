@@ -32,7 +32,7 @@ pub use renderloop::RenderLoop;
 mod universe;
 pub use universe::Universe;
 
-const NO_OF_PLANETS: usize = 5000;
+const NO_OF_PLANETS: usize = 100;
 
 #[wasm_bindgen]
 extern "C" {

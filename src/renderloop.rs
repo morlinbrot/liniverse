@@ -58,8 +58,8 @@ impl RenderLoop {
         //let mean = self.fps.iter().fold(0.0, |acc, curr| acc + curr);
 
         self.universe
-            .borrow()
-            .tick_n_draw(&self.context, delta / 50.0);
+            .borrow_mut()
+            .tick_n_draw_brute(&self.context, delta / 50.0);
 
         self.animation_id = if let Some(ref closure) = self.closure {
             Some(
