@@ -75,8 +75,8 @@ impl Planet {
         };
 
         let velocity = Point {
-            x: rng.gen_range(-2.0, 2.0),
-            y: rng.gen_range(-2.0, 2.0),
+            x: rng.gen_range(-0.05, 0.05),
+            y: rng.gen_range(-0.05, 0.05),
         };
 
         Planet {
@@ -97,8 +97,8 @@ impl Planet {
         let radius = rng.gen_range(10.0, 12.0);
 
         let velocity = Point {
-            x: rng.gen_range(-0.2, 1.5),
-            y: rng.gen_range(-0.2, 1.5),
+            x: rng.gen_range(-0.05, 0.05),
+            y: rng.gen_range(-0.05, 0.05),
         };
 
         Planet {

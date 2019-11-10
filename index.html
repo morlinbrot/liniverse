@@ -2,12 +2,20 @@
 <html>
     <head>
         <meta content="text/html;charset=utf-8" http-equiv="Content-Type"/>
+        <link href="https://fonts.googleapis.com/css?family=Open+Sans:400,600,300" rel="stylesheet" type="text/css">
         <title>the liniverse</title>
         <style>
             body {
                 margin: 0;
                 padding: 0;
                 background-color: black;
+                color: white;
+                font-family: 'Open Sans';
+            }
+
+            #controls {
+                display: flex;
+                flex-direction: row;
             }
 
             #canvas {
@@ -22,6 +30,11 @@
 
                 border: 1px solid magenta;
             }
+
+            #fps {
+                border: 1px solid lightgray;
+                padding: 5px;
+            }
         </style>
     </head>
     <body>
@@ -29,6 +42,7 @@
             <div id="controls">
               <button id="restart-btn">↻</button>
               <button id="play-pause-btn">▶</button>
+              <div id="fps"></div>
             </div>
             <canvas id="canvas" />
         </div>

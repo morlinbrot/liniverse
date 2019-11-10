@@ -5,34 +5,44 @@ use wasm_bindgen::JsCast;
 
 use super::*;
 
+struct FpsStats {
+    min: f64,
+    max: f64,
+    mean: f64,
+}
+
 pub struct RenderLoop {
-    pub closure: Option<Closure<dyn Fn()>>,
-    animation_id: Option<i32>,
-    context: web_sys::CanvasRenderingContext2d,
-    fps: Vec<f64>,
-    play_pause_btn: web_sys::HtmlElement,
-    prev_timestamp: f64,
     universe: Rc<RefCell<Universe>>,
     window: web_sys::Window,
+    document: web_sys::Document,
+    context: web_sys::CanvasRenderingContext2d,
+
+    animation_id: Option<i32>,
+    pub closure: Option<Closure<dyn Fn()>>,
+    frames: Vec<f64>,
+    play_pause_btn: web_sys::HtmlElement,
+    prev_timestamp: f64,
 }
 
 impl RenderLoop {
     pub fn new(
         universe: Rc<RefCell<Universe>>,
         window: web_sys::Window,
-        play_pause_btn: web_sys::HtmlElement,
-
+        document: web_sys::Document,
         context: web_sys::CanvasRenderingContext2d,
+        play_pause_btn: web_sys::HtmlElement,
     ) -> Self {
         Self {
-            animation_id: None,
-            closure: None,
-            context,
-            fps: Vec::new(),
-            play_pause_btn,
-            prev_timestamp: 0.0,
             universe,
             window,
+            document,
+            context,
+            play_pause_btn,
+
+            animation_id: None,
+            closure: None,
+            frames: Vec::new(),
+            prev_timestamp: 0.0,
         }
     }
 }
@@ -46,14 +56,25 @@ impl RenderLoop {
 
         //let _timer = Timer::new("Universe::tick");
 
+        let target_fps = 60.0;
+
         let now = perf.now();
         let delta = now - self.prev_timestamp;
-        self.prev_timestamp = now;
 
-        let fps = 1.0 / delta * 1000.0;
-        self.fps.push(fps);
-        if self.fps.len() > 100 {
-            self.fps.remove(0);
+        // We only render when we have to to keep up with target_fps.
+        if delta > 1000.0 / target_fps {
+            self.prev_timestamp = now;
+
+            let stats = self.calc_fps_stats(delta);
+
+            if let Some(fps_display) = self.document.get_element_by_id("fps") {
+                fps_display.set_inner_html(&format!(
+                    "FPS min: {}, max: {}, mean: {}",
+                    stats.min, stats.max, stats.mean
+                ));
+            }
+
+            self.universe.borrow().tick_n_draw(&self.context, delta);
         }
         //let mean = self.fps.iter().fold(0.0, |acc, curr| acc + curr);
 
@@ -100,6 +121,31 @@ impl RenderLoop {
             self.pause()
         } else {
             self.play()
+        }
+    }
+
+    fn calc_fps_stats(&mut self, delta: f64) -> FpsStats {
+        let fps = 1.0 / delta * 1000.0;
+
+        self.frames.push(fps);
+        if self.frames.len() > 100 {
+            self.frames.remove(0);
+        }
+
+        let mut min = std::f64::INFINITY;
+        let mut max = std::f64::NEG_INFINITY;
+        let mut sum = 0.0;
+        for f in &self.frames {
+            min = f.min(min);
+            max = f.max(max);
+            sum += f;
+        }
+        let mean = sum / self.frames.len() as f64;
+
+        FpsStats {
+            min: min.floor(),
+            max: max.floor(),
+            mean: mean.floor(),
         }
     }
 }

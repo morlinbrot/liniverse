@@ -65,6 +65,7 @@ pub fn main(
     play_pause_btn: web_sys::HtmlElement,
 ) -> Result<ModuleHandler, JsValue> {
     let window = web_sys::window().expect("No window object.");
+    let document = window.document().expect("No document object.");
     let dimensions = get_dimensions(&canvas);
     let universe = Rc::new(RefCell::new(Universe::new(dimensions)));
     let context = canvas
@@ -79,8 +80,9 @@ pub fn main(
     let render_loop = Rc::new(RefCell::new(RenderLoop::new(
         universe.clone(),
         window.clone(),
-        play_pause_btn.clone(),
+        document.clone(),
         context,
+        play_pause_btn.clone(),
     )));
 
     render_loop.borrow_mut().closure = Some({
