@@ -21,16 +21,13 @@ impl Universe {
     }
 
     pub fn init_random(&mut self) {
-        //let mut rng = rand::thread_rng();
-        self.planets.push(Rc::new(RefCell::new(Planet::new(
+        // let mut rng = rand::thread_rng();
+        self.planets.push(Rc::new(RefCell::new(Planet::new_sun(
             self.dimensions.0 / 2.0,
             self.dimensions.1 / 2.0,
-            6_000.0,
-            20.0,
-            Point::new(0.0, 0.0),
         ))));
 
-        for _i in 0..super::NO_OF_PLANETS {
+        for _i in 0..NO_OF_PLANETS {
             let planet = Rc::new(RefCell::new(Planet::new_rng(self.dimensions)));
             self.planets.push(planet);
         }
@@ -47,7 +44,6 @@ impl Universe {
     }
 
     pub fn tick_n_draw<'a>(&self, ctx: &'a Canvas, time: f64) -> &'a Canvas {
-
         let mut qtree = self.init_quad_tree();
         for planet in &self.planets {
             qtree.insert(planet.clone()).unwrap();
@@ -71,10 +67,6 @@ impl Universe {
     pub fn tick_n_draw_brute<'a>(&mut self, ctx: &'a Canvas, _time: f64) -> &'a Canvas {
         let G = 6.67 * 10_f64.powf(-11.0);
 
-        // Some parameters to make the universe more enjoyable to look at.
-        let scale_f = 10_f64.powf(4.0);
-        let eating_force = 400.0;
-
         for (i, p) in self.planets.iter().enumerate() {
             let p = p.borrow();
             if p.dead() {
@@ -93,7 +85,7 @@ impl Universe {
                     let d = direction.mag();
                     let F = (G * p.mass() * other_p.mass()) / (d * d);
 
-                    if direction.mag() <= p.radius() && F > eating_force {
+                    if direction.mag() <= p.radius() && F > EATING_FORCE {
                         //self.log(&F.into());
                         p.eat(&other_p);
                         other_p.die();
@@ -113,11 +105,11 @@ impl Universe {
 
             // We start with a force of (0, 0) and apply each previously calculated gravitational
             // force in turn.
-            let mut net_force = Point { x: 0.0, y: 0.0 };
+            let mut net_force = Point::default();
             net_force = forces.into_iter().fold(net_force, |acc, curr| acc + curr);
 
             // We need to scale F for now to have something actually happening on the screen.
-            p.accelerate(net_force * scale_f);
+            p.accelerate(net_force * SCALE_F);
 
             // Let's have Sun stay in the middle of the universe.
             if i > 0 {
@@ -167,7 +159,8 @@ impl Universe {
         let planet = planet.borrow();
         let pos = planet.pos();
         ctx.begin_path();
-        ctx.arc(pos.x, pos.y, planet.radius(), 0.0, PI * 2.0).unwrap();
+        ctx.arc(pos.x, pos.y, planet.radius(), 0.0, PI * 2.0)
+            .unwrap();
         ctx.stroke();
         ctx.fill();
         ctx.set_stroke_style(&"white".into());

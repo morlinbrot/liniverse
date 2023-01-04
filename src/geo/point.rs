@@ -159,6 +159,12 @@ impl std::ops::Div<usize> for &Point {
     }
 }
 
+impl std::default::Default for Point {
+    fn default() -> Self {
+        Self::new(0., 0.)
+    }
+}
+
 impl std::fmt::Display for Point {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         writeln!(f, "{:>13}", "POINT")?;

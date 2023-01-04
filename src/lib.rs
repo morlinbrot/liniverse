@@ -33,6 +33,8 @@ mod universe;
 pub use universe::Universe;
 
 const NO_OF_PLANETS: usize = 100;
+const SCALE_F: f64 = 10_000.;
+const EATING_FORCE: f64 = 400.0;
 
 #[wasm_bindgen]
 extern "C" {

@@ -62,6 +62,10 @@ impl Planet {
         }
     }
 
+    pub fn new_sun(x: f64, y: f64) -> Self {
+        Self::new(x, y, 6_000.0, 20.0, Point::new(0.0, 0.0))
+    }
+
     /// Create a `Planet` with randomly generated parameters.
     pub fn new_rng(dimensions: (f64, f64)) -> Self {
         let mut rng = rand::thread_rng();

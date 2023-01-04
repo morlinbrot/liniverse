@@ -1,4 +1,4 @@
-const wasm = import('./pkg/liniverse');
+const wasm = import('./pkg/index');
 
 const canvas = document.getElementById('canvas');
 const restart_btn = document.getElementById('restart-btn');
