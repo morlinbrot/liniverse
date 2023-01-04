@@ -53,7 +53,7 @@ fn get_dimensions(canvas: &web_sys::HtmlCanvasElement) -> (f64, f64) {
     (bounding_rect.width(), bounding_rect.height())
 }
 
-#[allow(dead_code)]
+#[allow(dead_code, dyn_drop)]
 #[wasm_bindgen]
 pub struct ModuleHandler {
     render_loop: Rc<RefCell<RenderLoop>>,
@@ -77,12 +77,13 @@ pub fn main(
         .dyn_into::<web_sys::CanvasRenderingContext2d>()
         .unwrap();
 
+    #[allow(dyn_drop)]
     let mut closures: Vec<Box<dyn Drop>> = Vec::new();
 
     let render_loop = Rc::new(RefCell::new(RenderLoop::new(
         universe.clone(),
-        window.clone(),
-        document.clone(),
+        window,
+        document,
         context,
         play_pause_btn.clone(),
     )));

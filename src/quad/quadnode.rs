@@ -124,7 +124,7 @@ impl QuadNode {
                         self.com,
                         self.mass.unwrap(),
                     )));
-                    let f = QuadNode::calc_force(target_body.clone(), aggregation.clone());
+                    let f = QuadNode::calc_force(target_body.clone(), aggregation);
                     let v = QuadNode::calc_velocity(target_body.clone(), f, delta);
                     net_v += v;
                     println!("Returning from agg: {}", &net_v);

@@ -74,7 +74,9 @@ impl RenderLoop {
                 ));
             }
 
-            self.universe.borrow().tick_n_draw(&self.context, delta);
+            self.universe
+                .borrow_mut()
+                .tick_n_draw_brute(&self.context, delta);
         }
         //let mean = self.fps.iter().fold(0.0, |acc, curr| acc + curr);
 

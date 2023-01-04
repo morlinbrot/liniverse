@@ -35,7 +35,7 @@ impl Universe {
 
     #[allow(dead_code)]
     pub fn log(&self, val: &JsValue) {
-        web_sys::console::log_1(&val);
+        web_sys::console::log_1(val);
     }
 
     pub fn add_planet(&mut self, x: f64, y: f64) {
@@ -121,7 +121,7 @@ impl Universe {
             .planets
             .iter()
             .filter(|p| !p.borrow_mut().dead())
-            .map(|p| p.clone())
+            .cloned()
             .collect();
 
         self.planets = planets;

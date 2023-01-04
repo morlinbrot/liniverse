@@ -125,15 +125,15 @@ impl Planet {
         let mut y = self.pos().y + self.velocity().y;
 
         if x > max_x {
-            x = x - max_x;
+            x -= max_x;
         } else if x < 0.0 {
-            x = x + max_x;
+            x += max_x;
         }
 
         if y > max_y {
-            y = y - max_y;
+            y -= max_y;
         } else if y < 0.0 {
-            y = y + max_y;
+            y += max_y;
         }
 
         self.pos.set(Point { x, y });
@@ -187,7 +187,7 @@ impl Planet {
     }
 
     fn volume(&self) -> f64 {
-        4.0 / 3.0 * PI * (self.radius() as f64).powf(3.0)
+        4.0 / 3.0 * PI * (self.radius()).powf(3.0)
     }
 }
 
